@@ -243,12 +243,14 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
     it('exits without calling transport if email is already in SENT status', async () => {
       const mockTransport: EmailTransport = {
         send: vi.fn(),
+        close: vi.fn(),
       };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
         id: 'msg-sent',
         status: EmailStatus.SENT,
         job: { status: JobStatus.COMPLETED } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com' } as any,
       } as any);
 
       const fakeJob = {
@@ -265,12 +267,14 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
     it('exits without calling transport if email is CANCELLED', async () => {
       const mockTransport: EmailTransport = {
         send: vi.fn(),
+        close: vi.fn(),
       };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
         id: 'msg-cancelled',
         status: EmailStatus.CANCELLED,
         job: { status: JobStatus.CANCELLED } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com' } as any,
       } as any);
 
       const fakeJob = {
@@ -287,6 +291,7 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
     it('exits without sending if another worker already claimed the message (claimed.count === 0)', async () => {
       const mockTransport: EmailTransport = {
         send: vi.fn(),
+        close: vi.fn(),
       };
 
       vi.spyOn(prisma.emailMessage, 'findUnique')
@@ -294,6 +299,7 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
           id: 'msg-racing',
           status: EmailStatus.SCHEDULED,
           job: { status: JobStatus.PENDING } as any,
+          sender: { id: 'snd-1', email: 'sender@test.com' } as any,
         } as any)
         .mockResolvedValueOnce({
           status: EmailStatus.PROCESSING,
@@ -477,6 +483,7 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
     it('updates EmailMessage and EmailJob to FAILED and records lastError when transport throws', async () => {
       const mockTransport: EmailTransport = {
         send: vi.fn().mockRejectedValue(new Error('SMTP Connection Refused')),
+        close: vi.fn(),
       };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
@@ -487,6 +494,7 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
         body: 'Fail Body',
         status: EmailStatus.SCHEDULED,
         job: { status: JobStatus.PENDING } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com', name: 'Sender' } as any,
       } as any);
 
       vi.spyOn(prisma.emailMessage, 'updateMany').mockResolvedValue({ count: 1 });
@@ -520,7 +528,8 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   describe('K. Successful Transport Delivery', () => {
     it('transitions EmailMessage to SENT and EmailJob to COMPLETED on success', async () => {
       const mockTransport: EmailTransport = {
-        send: vi.fn().mockResolvedValue(undefined),
+        send: vi.fn().mockResolvedValue({ messageId: 'm-123' }),
+        close: vi.fn(),
       };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
@@ -531,6 +540,7 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
         body: 'Success Body',
         status: EmailStatus.SCHEDULED,
         job: { status: JobStatus.PENDING } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com', name: 'Sender Name' } as any,
       } as any);
 
       vi.spyOn(prisma.emailMessage, 'updateMany').mockResolvedValue({ count: 1 });
@@ -551,6 +561,10 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
       await processEmailJob(fakeJob, mockTransport, 0, 100);
 
       expect(mockTransport.send).toHaveBeenCalledWith({
+        from: {
+          email: 'sender@test.com',
+          name: 'Sender Name',
+        },
         recipient: 'success@test.com',
         subject: 'Success Subj',
         body: 'Success Body',
@@ -565,12 +579,13 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   // =========================================================================
   describe('L. SENT Email Cannot Be Sent Again', () => {
     it('safely skips already sent messages without re-invoking transport', async () => {
-      const mockTransport: EmailTransport = { send: vi.fn() };
+      const mockTransport: EmailTransport = { send: vi.fn(), close: vi.fn() };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
         id: 'msg-already-sent',
         status: EmailStatus.SENT,
         job: { status: JobStatus.COMPLETED } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com' } as any,
       } as any);
 
       await processEmailJob(
@@ -590,12 +605,13 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   // =========================================================================
   describe('M. CANCELLED Email Cannot Be Sent', () => {
     it('safely skips cancelled messages without re-invoking transport', async () => {
-      const mockTransport: EmailTransport = { send: vi.fn() };
+      const mockTransport: EmailTransport = { send: vi.fn(), close: vi.fn() };
 
       vi.spyOn(prisma.emailMessage, 'findUnique').mockResolvedValue({
         id: 'msg-cancelled-2',
         status: EmailStatus.CANCELLED,
         job: { status: JobStatus.CANCELLED } as any,
+        sender: { id: 'snd-1', email: 'sender@test.com' } as any,
       } as any);
 
       await processEmailJob(
@@ -713,7 +729,10 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   // =========================================================================
   describe('Worker Factory & Concurrency Configuration', () => {
     it('creates BullMQ worker with configured concurrency', () => {
-      const mockTransport: EmailTransport = { send: async () => {} };
+      const mockTransport: EmailTransport = {
+        send: async () => ({ messageId: 'm-1' }),
+        close: async () => {},
+      };
       const worker = createEmailWorker({
         transport: mockTransport,
         minimumDelayMs: 1000,

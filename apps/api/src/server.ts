@@ -5,6 +5,7 @@ import { closeDb } from './lib/db';
 import { closeRedis } from './lib/redis';
 import { emailQueue } from './queues/email.queue';
 import { closeRedisConnection } from './queues/redis';
+import { SmtpTransportManager } from './services/smtp';
 
 const server = app.listen(config.API_PORT, config.API_HOST, () => {
   logger.info(`ReachInbox API server running`, {
@@ -27,11 +28,12 @@ async function gracefulShutdown(signal: string): Promise<void> {
     try {
       await Promise.allSettled([
         emailQueue.close(),
+        SmtpTransportManager.closeAll(),
         closeDb(),
         closeRedis(),
         closeRedisConnection(),
       ]);
-      logger.info('Queues, database, and Redis connections closed successfully');
+      logger.info('Queues, SMTP pools, database, and Redis connections closed successfully');
       process.exit(0);
     } catch (cleanupError) {
       logger.error('Error during cleanup', {

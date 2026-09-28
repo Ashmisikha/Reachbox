@@ -9,13 +9,14 @@ import type { SendEmailJobData } from '../queues/email-job.types';
 import { reserveDeliverySlot } from '../services/email-delivery-policy.service';
 import { rescheduleEmail } from '../queues/reschedule-email';
 
-export interface EmailTransport {
-  send(input: {
-    recipient: string;
-    subject: string;
-    body: string;
-  }): Promise<void>;
-}
+import { logger } from '../lib/logger';
+import type {
+  EmailTransport,
+  EmailTransportInput,
+  EmailTransportResult,
+} from '../services/smtp/email.transport';
+
+export type { EmailTransport, EmailTransportInput, EmailTransportResult };
 
 export interface EmailWorkerOptions {
   transport: EmailTransport;
@@ -77,6 +78,7 @@ export async function processEmailJob(
     },
     include: {
       job: true,
+      sender: true,
     },
   });
 
@@ -91,6 +93,10 @@ export async function processEmailJob(
 
   if (!message.job) {
     throw new Error(`Email job record missing for message ${message.id}`);
+  }
+
+  if (!message.sender) {
+    throw new Error(`Sender account ${message.senderId} not found for message ${message.id}`);
   }
 
   if (message.job.status === JobStatus.COMPLETED) {
@@ -184,10 +190,25 @@ export async function processEmailJob(
   }
 
   try {
-    await transport.send({
+    const transportResult = await transport.send({
+      from: {
+        email: message.sender.email,
+        name: message.sender.name ?? undefined,
+      },
       recipient: message.recipient,
       subject: message.subject,
       body: message.body,
+    });
+
+    logger.info('Email message dispatched via SMTP', {
+      emailMessageId: message.id,
+      campaignId: message.campaignId,
+      senderId: message.senderId,
+      senderEmail: message.sender.email,
+      recipient: message.recipient,
+      messageId: transportResult?.messageId,
+      previewUrl: transportResult?.previewUrl,
+      attempt: (message.attemptCount ?? 0) + 1,
     });
 
     await prisma.$transaction([
@@ -213,8 +234,21 @@ export async function processEmailJob(
       }),
     ]);
   } catch (error) {
-    const errorMessage =
+    const rawErrorMessage =
       error instanceof Error ? error.message : 'Unknown email transport error';
+
+    // Sanitize any accidental credentials, passwords, or tokens in error message
+    const sanitizedError = rawErrorMessage
+      .replace(/([a-zA-Z0-9._%+-]+:[^@\s]+@)/g, '***:***@')
+      .slice(0, 1000);
+
+    logger.error('Email transport dispatch failed', {
+      emailMessageId: message.id,
+      campaignId: message.campaignId,
+      senderId: message.senderId,
+      recipient: message.recipient,
+      error: sanitizedError,
+    });
 
     await prisma.$transaction([
       prisma.emailMessage.update({
@@ -223,7 +257,7 @@ export async function processEmailJob(
         },
         data: {
           status: EmailStatus.FAILED,
-          lastError: errorMessage,
+          lastError: sanitizedError,
         },
       }),
       prisma.emailJob.update({
@@ -232,7 +266,7 @@ export async function processEmailJob(
         },
         data: {
           status: JobStatus.FAILED,
-          lastError: errorMessage,
+          lastError: sanitizedError,
         },
       }),
     ]);

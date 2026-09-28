@@ -673,6 +673,6 @@ describe('Phase 3 — Ethereal SMTP + Real Email Dispatch', () => {
       } finally {
         await liveTransport.close();
       }
-    });
+    }, 25000);
   });
 });

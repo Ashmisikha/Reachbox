@@ -1,4 +1,10 @@
+import path from 'path';
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 export const smtpConfigSchema = z.object({
   ETHEREAL_HOST: z.string().min(1).default('smtp.ethereal.email'),

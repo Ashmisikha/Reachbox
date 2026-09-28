@@ -56,3 +56,27 @@ export interface ApiResponse<T = unknown> {
   error?: ApiError;
   timestamp: string;
 }
+
+export type ContactStatus = 'ACTIVE' | 'ARCHIVED' | 'UNSUBSCRIBED' | 'BOUNCED';
+
+export interface Contact {
+  id: string;
+  userId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  jobTitle: string | null;
+  tags: string[];
+  status: ContactStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactImportSummary {
+  imported: number;
+  skipped: number;
+  duplicates: number;
+  invalid: number;
+  totalRows: number;
+}

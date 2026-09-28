@@ -56,6 +56,7 @@ model User {
   campaigns       EmailCampaign[]
   slackConnection SlackConnection?
   sessions        Session[]
+  contacts        Contact[]
 
   @@index([status])
   @@index([googleId])
@@ -203,4 +204,35 @@ model SlackConnection {
   @@index([userId])
   @@index([status])
   @@map("slack_connections")
+}
+
+enum ContactStatus {
+  ACTIVE
+  ARCHIVED
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+model Contact {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @map("user_id") @db.Uuid
+
+  email     String
+  firstName String?       @map("first_name")
+  lastName  String?       @map("last_name")
+  company   String?
+  jobTitle  String?       @map("job_title")
+  tags      String[]      @default([])
+  status    ContactStatus @default(ACTIVE)
+
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, email])
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, email])
+  @@map("contacts")
 }

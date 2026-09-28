@@ -12,6 +12,8 @@ import { enqueueIndexEmailJob } from '../queues/email-index.queue';
 import { slackNotificationService } from '../services/slack/slack-notification.service';
 
 import { logger } from '../lib/logger';
+import { CampaignEventService } from '../services/campaign-event.service';
+import { isPermanentFailureError } from '../services/failure.service';
 import type {
   EmailTransport,
   EmailTransportInput,
@@ -89,8 +91,12 @@ export async function processEmailJob(
     return;
   }
 
-  // Idempotency: skip if already sent or cancelled
-  if (message.status === EmailStatus.SENT || message.status === EmailStatus.CANCELLED) {
+  // Idempotency: skip if already sent or cancelled or suppressed
+  if (
+    message.status === EmailStatus.SENT ||
+    message.status === EmailStatus.CANCELLED ||
+    message.status === EmailStatus.SUPPRESSED
+  ) {
     return;
   }
 
@@ -104,6 +110,53 @@ export async function processEmailJob(
 
   if (message.job.status === JobStatus.COMPLETED) {
     return;
+  }
+
+  // Phase E: Server-side Suppression Check
+  if (message.campaign?.userId) {
+    const suppressed = await prisma.suppression.findUnique({
+      where: {
+        userId_email: {
+          userId: message.campaign.userId,
+          email: message.recipient.toLowerCase().trim(),
+        },
+      },
+    });
+
+    if (suppressed) {
+      logger.info('Recipient is suppressed. Skipping send.', {
+        emailMessageId: message.id,
+        recipient: message.recipient,
+        userId: message.campaign.userId,
+      });
+
+      await prisma.$transaction([
+        prisma.emailMessage.update({
+          where: { id: message.id },
+          data: {
+            status: EmailStatus.SUPPRESSED,
+            lastError: `Recipient suppressed (${suppressed.reason || 'Unsubscribed'})`,
+          },
+        }),
+        prisma.emailJob.update({
+          where: { emailMessageId: message.id },
+          data: {
+            status: JobStatus.COMPLETED,
+            lastError: 'Suppressed recipient',
+          },
+        }),
+      ]);
+
+      if (message.campaignId) {
+        await CampaignEventService.logEvent(
+          message.campaignId,
+          'RECIPIENT_SUPPRESSED',
+          `Recipient ${message.recipient} suppressed (${suppressed.reason || 'Unsubscribed'})`,
+          { recipient: message.recipient, reason: suppressed.reason }
+        );
+      }
+      return;
+    }
   }
 
   // 1. Conditional database claim: only from SCHEDULED or FAILED
@@ -137,6 +190,7 @@ export async function processEmailJob(
     if (
       current?.status === EmailStatus.SENT ||
       current?.status === EmailStatus.CANCELLED ||
+      current?.status === EmailStatus.SUPPRESSED ||
       current?.status === EmailStatus.PROCESSING
     ) {
       return;
@@ -159,9 +213,6 @@ export async function processEmailJob(
   });
 
   // 2. Atomic Redis spacing & hourly quota policy check
-  // Executed AFTER DB claim to guarantee zero quota is wasted on un-claimable emails.
-  // If denied, the email is cleanly reverted from PROCESSING back to SCHEDULED/PENDING
-  // so it is not stuck in PROCESSING during the BullMQ delayed window.
   const policy = await reserveDeliverySlot({
     senderId: message.senderId,
     hourlyLimit,
@@ -169,25 +220,35 @@ export async function processEmailJob(
   });
 
   if (!policy.allowed) {
-    // Auxiliary Slack Notification: emit event when hourly quota is hit
     if (policy.reason === 'HOURLY_LIMIT' || policy.retryAfterMs >= 60000) {
-      slackNotificationService
-        .notifyRateLimitReached({
-          userId: message.campaign.userId,
-          campaignId: message.campaignId,
-          campaignSubject: message.campaign.subject,
-          senderId: message.senderId,
-          senderEmail: message.sender.email,
-          hourlyLimit,
-          retryAfterMs: policy.retryAfterMs,
-          timestamp: new Date().toISOString(),
-        })
-        .catch((err) => {
-          logger.error('Failed to enqueue Slack rate-limit notification', {
-            error: err.message,
-            emailMessageId: message.id,
+      if (message.campaign?.userId) {
+        slackNotificationService
+          .notifyRateLimitReached({
+            userId: message.campaign.userId,
+            campaignId: message.campaignId,
+            campaignSubject: message.campaign?.subject || 'Campaign',
+            senderId: message.senderId,
+            senderEmail: message.sender.email,
+            hourlyLimit,
+            retryAfterMs: policy.retryAfterMs,
+            timestamp: new Date().toISOString(),
+          })
+          .catch((err) => {
+            logger.error('Failed to enqueue Slack rate-limit notification', {
+              error: err.message,
+              emailMessageId: message.id,
+            });
           });
-        });
+      }
+
+      if (message.campaignId) {
+        await CampaignEventService.logEvent(
+          message.campaignId,
+          'RATE_LIMIT_REACHED',
+          `Hourly limit reached for sender ${message.sender.email}. Rescheduling in ${Math.round(policy.retryAfterMs / 1000)}s`,
+          { senderId: message.senderId, retryAfterMs: policy.retryAfterMs }
+        );
+      }
     }
 
     await prisma.$transaction([
@@ -258,8 +319,36 @@ export async function processEmailJob(
       }),
     ]);
 
+    if (message.campaignId) {
+      await CampaignEventService.logEvent(
+        message.campaignId,
+        'EMAIL_SENT',
+        `Email successfully sent to ${message.recipient}`,
+        { recipient: message.recipient, messageId: transportResult?.messageId }
+      );
+
+      // Check if campaign is completed
+      const pendingCount = await prisma.emailMessage.count({
+        where: {
+          campaignId: message.campaignId,
+          status: { in: [EmailStatus.SCHEDULED, EmailStatus.PROCESSING] },
+        },
+      });
+
+      if (pendingCount === 0) {
+        await prisma.emailCampaign.update({
+          where: { id: message.campaignId },
+          data: { status: 'COMPLETED' },
+        });
+        await CampaignEventService.logEvent(
+          message.campaignId,
+          'CAMPAIGN_COMPLETED',
+          'All recipients in campaign have finished processing'
+        );
+      }
+    }
+
     // Phase 4: Enqueue for Elasticsearch indexing
-    // Non-blocking & decoupled from SMTP delivery success
     try {
       await enqueueIndexEmailJob(message.id);
     } catch (indexEnqueueError) {
@@ -270,16 +359,17 @@ export async function processEmailJob(
             ? indexEnqueueError.message
             : String(indexEnqueueError),
       });
-      // Important: Delivery remains SENT and COMPLETED even if queueing index fails
     }
   } catch (error) {
     const rawErrorMessage =
       error instanceof Error ? error.message : 'Unknown email transport error';
 
-    // Sanitize any accidental credentials, passwords, or tokens in error message
     const sanitizedError = rawErrorMessage
       .replace(/([a-zA-Z0-9._%+-]+:[^@\s]+@)/g, '***:***@')
       .slice(0, 1000);
+
+    const isPermanent = isPermanentFailureError(sanitizedError);
+    const nextRetryAt = isPermanent ? null : new Date(Date.now() + 15 * 60 * 1000);
 
     logger.error('Email transport dispatch failed', {
       emailMessageId: message.id,
@@ -287,6 +377,7 @@ export async function processEmailJob(
       senderId: message.senderId,
       recipient: message.recipient,
       error: sanitizedError,
+      isPermanent,
     });
 
     await prisma.$transaction([
@@ -297,6 +388,8 @@ export async function processEmailJob(
         data: {
           status: EmailStatus.FAILED,
           lastError: sanitizedError,
+          isPermanent,
+          nextRetryAt,
         },
       }),
       prisma.emailJob.update({
@@ -309,6 +402,15 @@ export async function processEmailJob(
         },
       }),
     ]);
+
+    if (message.campaignId) {
+      await CampaignEventService.logEvent(
+        message.campaignId,
+        'SEND_FAILED',
+        `Sending failed for ${message.recipient}: ${sanitizedError}`,
+        { recipient: message.recipient, isPermanent, error: sanitizedError }
+      );
+    }
 
     throw error;
   }

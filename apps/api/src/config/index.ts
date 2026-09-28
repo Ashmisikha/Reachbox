@@ -17,11 +17,17 @@ const configSchema = z.object({
     ),
   REDIS_URL: z.string().default('redis://localhost:6379'),
 
-  // Worker & operational throttling defaults (AGENTS.md §7, §9, §10, §17)
+  // Operational limits and delays
   WORKER_CONCURRENCY: z.coerce.number().default(5),
   MIN_EMAIL_DELAY_MS: z.coerce.number().default(2000),
   MAX_EMAILS_PER_HOUR: z.coerce.number().default(200),
   MAX_EMAILS_PER_HOUR_PER_SENDER: z.coerce.number().default(50),
+
+  // BullMQ queue configuration
+  EMAIL_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(100).default(10),
+  EMAIL_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
+  EMAIL_RETRY_DELAY_MS: z.coerce.number().int().min(100).default(5000),
+  EMAIL_SCHEDULING_BATCH_SIZE: z.coerce.number().int().min(50).max(2000).default(500),
 });
 
 export type Config = z.infer<typeof configSchema>;

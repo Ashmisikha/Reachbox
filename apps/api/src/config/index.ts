@@ -49,3 +49,4 @@ function loadConfig(): Config {
 
 export const config = loadConfig();
 export * from './elasticsearch';
+export * from './google';

@@ -33,6 +33,8 @@ import prisma from '../src/lib/prisma';
 import { EmailStatus, JobStatus, UserStatus, SenderStatus, CampaignStatus } from '@prisma/client';
 import { processEmailJob } from '../src/workers/email.worker';
 import type { EmailTransport } from '../src/services/smtp/email.transport';
+import { sessionService } from '../src/services/auth/session.service';
+import { googleConfig } from '../src/config/google';
 
 describe('Phase 4 — Elasticsearch Indexing & Search', () => {
   const TEST_INDEX = `test-emails-${Date.now()}`;
@@ -755,6 +757,20 @@ describe('Phase 4 — Elasticsearch Indexing & Search', () => {
   // Search API & Health Endpoint Tests
   // ============================================================================
   describe('Search API & Health Endpoints', () => {
+    let authCookie = '';
+
+    beforeAll(async () => {
+      const testUser = await prisma.user.create({
+        data: {
+          email: `search-api-${Date.now()}@example.com`,
+          name: 'Search API User',
+          status: UserStatus.ACTIVE,
+        },
+      });
+      const { rawToken } = await sessionService.createSession(testUser.id);
+      authCookie = `${googleConfig.SESSION_COOKIE_NAME}=${rawToken}`;
+    });
+
     it('GET /health returns 200 with standard health status', async () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);
@@ -776,6 +792,7 @@ describe('Phase 4 — Elasticsearch Indexing & Search', () => {
     it('GET /api/emails/search rejects invalid query parameters with 400 VALIDATION_ERROR', async () => {
       const res = await request(app)
         .get('/api/emails/search')
+        .set('Cookie', [authCookie])
         .query({ page: -5, pageSize: 500, status: 'INVALID_STATUS' });
 
       expect(res.status).toBe(400);
@@ -785,6 +802,7 @@ describe('Phase 4 — Elasticsearch Indexing & Search', () => {
     it('GET /api/emails/search executes valid query and returns clean search result schema', async () => {
       const res = await request(app)
         .get('/api/emails/search')
+        .set('Cookie', [authCookie])
         .query({ q: 'discount', page: 1, pageSize: 10 });
 
       expect(res.status).toBe(200);

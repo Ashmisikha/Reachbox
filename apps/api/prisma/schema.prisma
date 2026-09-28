@@ -43,6 +43,7 @@ enum JobStatus {
 
 model User {
   id        String     @id @default(uuid()) @db.Uuid
+  googleId  String?    @unique @map("google_id")
   email     String     @unique
   name      String
   avatarUrl String?    @map("avatar_url")
@@ -54,9 +55,26 @@ model User {
   senders         SenderAccount[]
   campaigns       EmailCampaign[]
   slackConnection SlackConnection?
+  sessions        Session[]
 
   @@index([status])
+  @@index([googleId])
   @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @unique @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
 }
 
 model SenderAccount {

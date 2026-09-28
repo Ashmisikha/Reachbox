@@ -1,0 +1,60 @@
+import { AuthUser } from '../types/auth';
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+
+export const authApiService = {
+  /**
+   * Returns the direct URL to begin Google OAuth 2.0 authentication flow.
+   */
+  getGoogleLoginUrl(): string {
+    return `${API_BASE_URL}/api/auth/google`;
+  },
+
+  /**
+   * Fetches the current authenticated user from the backend session cookie.
+   */
+  async getMe(): Promise<AuthUser | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      if (response.status === 401) {
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch authenticated session: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.user as AuthUser;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Invalidate the current session and clear authentication cookie.
+   */
+  async logout(): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      return response.ok;
+    } catch {
+      return false;
+    }
+  },
+};

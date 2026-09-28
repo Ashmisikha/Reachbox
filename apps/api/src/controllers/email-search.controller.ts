@@ -53,7 +53,15 @@ export async function searchEmails(
       return;
     }
 
-    const result = await emailSearchService.search(parseResult.data);
+    // MANDATORY SECURITY ENFORCEMENT (Phase 5):
+    // Derive userId strictly from the authenticated session.
+    // Client-supplied userId query parameter is strictly overridden.
+    const searchParams = {
+      ...parseResult.data,
+      ...(req.user ? { userId: req.user.id } : {}),
+    };
+
+    const result = await emailSearchService.search(searchParams);
     res.status(200).json(result);
   } catch (error) {
     next(error);

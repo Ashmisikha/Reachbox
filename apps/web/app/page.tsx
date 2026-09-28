@@ -1,5 +1,6 @@
 import React from 'react';
 import { EMAIL_STATUSES } from '@reachinbox/shared';
+import { AuthBoundary } from '../components/auth/AuthBoundary';
 
 export default function HomePage() {
   return (
@@ -7,17 +8,20 @@ export default function HomePage() {
       {/* Header Badge */}
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-medium tracking-wide mb-6">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-        Phase 0: Project Foundation Active
+        Phase 5: Real Google OAuth Active
       </div>
 
       {/* Main Title & Subtitle */}
       <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-center bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent mb-4">
         ReachInbox Email Job Scheduler
       </h1>
-      <p className="text-slate-400 text-center max-w-2xl text-base md:text-lg mb-10">
-        Monorepo workspace initialized with strict TypeScript, Express backend, Next.js frontend,
-        and containerized PostgreSQL &amp; Redis services.
+      <p className="text-slate-400 text-center max-w-2xl text-base md:text-lg mb-8">
+        Full-stack email scheduling platform with BullMQ delayed jobs, PostgreSQL persistence,
+        Elasticsearch full-text search, and real Google OAuth 2.0 authentication.
       </p>
+
+      {/* Authentication Boundary (Phase 5) */}
+      <AuthBoundary />
 
       {/* Architecture Status Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full mb-10">

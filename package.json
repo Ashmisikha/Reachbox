@@ -21,7 +21,11 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:logs": "docker compose logs -f",
+    "db:generate": "npm run db:generate -w @reachinbox/api",
+    "db:migrate": "npm run db:migrate -w @reachinbox/api",
+    "db:migrate:deploy": "npm run db:migrate:deploy -w @reachinbox/api",
+    "db:studio": "npm run db:studio -w @reachinbox/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

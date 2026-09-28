@@ -28,6 +28,10 @@ const configSchema = z.object({
   EMAIL_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(20).default(5),
   EMAIL_RETRY_DELAY_MS: z.coerce.number().int().min(100).default(5000),
   EMAIL_SCHEDULING_BATCH_SIZE: z.coerce.number().int().min(50).max(2000).default(500),
+
+  // Elasticsearch configuration
+  ELASTICSEARCH_URL: z.string().default('http://localhost:9200'),
+  ELASTICSEARCH_INDEX: z.string().default('emails'),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -44,3 +48,4 @@ function loadConfig(): Config {
 }
 
 export const config = loadConfig();
+export * from './elasticsearch';

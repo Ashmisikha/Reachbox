@@ -8,6 +8,7 @@ import { EMAIL_QUEUE_NAME } from '../queues/email.queue';
 import type { SendEmailJobData } from '../queues/email-job.types';
 import { reserveDeliverySlot } from '../services/email-delivery-policy.service';
 import { rescheduleEmail } from '../queues/reschedule-email';
+import { enqueueIndexEmailJob } from '../queues/email-index.queue';
 
 import { logger } from '../lib/logger';
 import type {
@@ -233,6 +234,21 @@ export async function processEmailJob(
         },
       }),
     ]);
+
+    // Phase 4: Enqueue for Elasticsearch indexing
+    // Non-blocking & decoupled from SMTP delivery success
+    try {
+      await enqueueIndexEmailJob(message.id);
+    } catch (indexEnqueueError) {
+      logger.error('Failed to enqueue email for indexing', {
+        emailMessageId: message.id,
+        error:
+          indexEnqueueError instanceof Error
+            ? indexEnqueueError.message
+            : String(indexEnqueueError),
+      });
+      // Important: Delivery remains SENT and COMPLETED even if queueing index fails
+    }
   } catch (error) {
     const rawErrorMessage =
       error instanceof Error ? error.message : 'Unknown email transport error';

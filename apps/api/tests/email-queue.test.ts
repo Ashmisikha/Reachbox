@@ -611,10 +611,10 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   });
 
   // =========================================================================
-  // N. Restart-Safe Delayed Job Persistence
+  // N. Delayed Job Persistence Across Queue Restart (Conditional on Live Redis)
   // =========================================================================
-  describe('N. Restart-Safe Delayed Job Persistence', () => {
-    it('preserves future delayed jobs across BullMQ queue instance restart', async (ctx) => {
+  describe('N. Delayed Job Persistence Across Queue Restart (Conditional on Live Redis)', () => {
+    it('preserves future delayed jobs across BullMQ queue instance restart when Redis is available', async (ctx) => {
       if (!isRedisAvailable) {
         ctx.skip();
         return;
@@ -659,10 +659,10 @@ describe('Phase 2 Revision — Production-Grade Scheduling Engine', () => {
   });
 
   // =========================================================================
-  // O. 1,000-Email Scheduling Benchmark & Deterministic Progression
+  // O. 1,000-Email Local Scheduling Calculation & Batching Benchmark
   // =========================================================================
-  describe('O. 1,000-Email Scheduling Benchmark', () => {
-    it('deterministically calculates and partitions 1,000 scheduled emails in under 50ms', () => {
+  describe('O. 1,000-Email Local Scheduling Calculation & Batching Benchmark', () => {
+    it('deterministically calculates and partitions 1,000 scheduled emails in under 50ms (local calculation & batching only)', () => {
       const startAt = new Date('2026-10-01T12:00:00.000Z');
       const delayMs = 2000;
       const count = 1000;

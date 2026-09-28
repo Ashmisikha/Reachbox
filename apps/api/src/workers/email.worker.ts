@@ -9,6 +9,7 @@ import type { SendEmailJobData } from '../queues/email-job.types';
 import { reserveDeliverySlot } from '../services/email-delivery-policy.service';
 import { rescheduleEmail } from '../queues/reschedule-email';
 import { enqueueIndexEmailJob } from '../queues/email-index.queue';
+import { slackNotificationService } from '../services/slack/slack-notification.service';
 
 import { logger } from '../lib/logger';
 import type {
@@ -80,6 +81,7 @@ export async function processEmailJob(
     include: {
       job: true,
       sender: true,
+      campaign: true,
     },
   });
 
@@ -167,6 +169,27 @@ export async function processEmailJob(
   });
 
   if (!policy.allowed) {
+    // Auxiliary Slack Notification: emit event when hourly quota is hit
+    if (policy.reason === 'HOURLY_LIMIT' || policy.retryAfterMs >= 60000) {
+      slackNotificationService
+        .notifyRateLimitReached({
+          userId: message.campaign.userId,
+          campaignId: message.campaignId,
+          campaignSubject: message.campaign.subject,
+          senderId: message.senderId,
+          senderEmail: message.sender.email,
+          hourlyLimit,
+          retryAfterMs: policy.retryAfterMs,
+          timestamp: new Date().toISOString(),
+        })
+        .catch((err) => {
+          logger.error('Failed to enqueue Slack rate-limit notification', {
+            error: err.message,
+            emailMessageId: message.id,
+          });
+        });
+    }
+
     await prisma.$transaction([
       prisma.emailMessage.update({
         where: { id: message.id },

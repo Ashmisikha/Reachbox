@@ -4,6 +4,7 @@
 import React from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { LogOut, CheckCircle, Shield, User as UserIcon } from 'lucide-react';
+import { SlackConnectionCard } from '../slack/SlackConnectionCard';
 
 export function AuthBoundary() {
   const { user, isAuthenticated, isLoading, loginWithGoogle, logout } = useAuth();
@@ -19,38 +20,41 @@ export function AuthBoundary() {
 
   if (isAuthenticated && user) {
     return (
-      <div className="w-full p-5 mb-8 rounded-xl border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={user.name}
-              className="w-12 h-12 rounded-full border border-emerald-500/40 object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
-              <UserIcon className="w-6 h-6" />
+      <div className="w-full mb-8 space-y-4">
+        <div className="w-full p-5 rounded-xl border border-emerald-500/30 bg-emerald-950/20 backdrop-blur-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="w-12 h-12 rounded-full border border-emerald-500/40 object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+                <UserIcon className="w-6 h-6" />
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold text-white">{user.name}</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <CheckCircle className="w-3 h-3" />
+                  Authenticated
+                </span>
+              </div>
+              <p className="text-sm text-slate-400 font-mono">{user.email}</p>
             </div>
-          )}
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold text-white">{user.name}</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <CheckCircle className="w-3 h-3" />
-                Authenticated
-              </span>
-            </div>
-            <p className="text-sm text-slate-400 font-mono">{user.email}</p>
           </div>
-        </div>
 
-        <button
-          onClick={logout}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-colors"
-        >
-          <LogOut className="w-4 h-4 text-red-400" />
-          Logout
-        </button>
+          <button
+            onClick={logout}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-colors"
+          >
+            <LogOut className="w-4 h-4 text-red-400" />
+            Logout
+          </button>
+        </div>
+        <SlackConnectionCard isAuthenticated={true} />
       </div>
     );
   }

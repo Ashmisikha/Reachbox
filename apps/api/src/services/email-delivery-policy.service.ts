@@ -9,6 +9,7 @@ export interface DeliveryPolicyInput {
 export interface DeliveryPolicyResult {
   allowed: boolean;
   retryAfterMs: number;
+  reason?: 'HOURLY_LIMIT' | 'SPACING' | 'ALLOWED';
 }
 
 const DELIVERY_POLICY_SCRIPT = `
@@ -45,12 +46,12 @@ local spacingAllowedAt = math.max(
 )
 
 if spacingAllowedAt > now then
-    return {0, spacingAllowedAt - now}
+    return {0, spacingAllowedAt - now, "SPACING"}
 end
 
 if sendCount >= hourlyLimit then
     local remainingWindow = windowMs - (now - tonumber(redis.call("GET", rateKey)))
-    return {0, math.max(remainingWindow, 1000)}
+    return {0, math.max(remainingWindow, 1000), "HOURLY_LIMIT"}
 end
 
 redis.call(
@@ -72,7 +73,7 @@ redis.call(
     windowMs
 )
 
-return {1, 0}
+return {1, 0, "ALLOWED"}
 `;
 
 export async function reserveDeliverySlot({
@@ -98,10 +99,11 @@ export async function reserveDeliverySlot({
     now,
     hourlyLimit,
     minimumDelayMs
-  )) as [number, number];
+  )) as [number, number, string?];
 
   return {
     allowed: Number(result[0]) === 1,
     retryAfterMs: Number(result[1]),
+    reason: (result[2] as 'HOURLY_LIMIT' | 'SPACING' | 'ALLOWED') || (Number(result[0]) === 1 ? 'ALLOWED' : 'SPACING'),
   };
 }

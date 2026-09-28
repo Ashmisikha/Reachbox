@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
         description="Detailed insights into your email performance and queue throughput."
         actions={
           <div className="flex items-center gap-2">
-            <DateRangeControl label="Feb 22, 2026 - Mar 25, 2026" />
+            <DateRangeControl label="Feb 22, 2026 - Mar 02, 2026" />
             <button
               type="button"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xs font-medium shadow-xs"

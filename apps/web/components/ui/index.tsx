@@ -133,7 +133,7 @@ export function PageHeader({
 
 // ─── DateRangeControl ──────────────────────────────────────────────────────────
 export function DateRangeControl({
-  label: defaultLabel = 'Feb 22, 2026 - Mar 25, 2026',
+  label: defaultLabel = 'Feb 22, 2026 - Mar 02, 2026',
   onChange,
 }: {
   label?: string;
@@ -142,14 +142,14 @@ export function DateRangeControl({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedLabel, setSelectedLabel] = useState(defaultLabel);
   const [customStart, setCustomStart] = useState('2026-02-22');
-  const [customEnd, setCustomEnd] = useState('2026-03-25');
+  const [customEnd, setCustomEnd] = useState('2026-03-02');
   const containerRef = useRef<HTMLDivElement>(null);
 
   const presets = [
     { label: 'Today', subtext: 'Today so far' },
     { label: 'Yesterday', subtext: 'Past 24 hours' },
-    { label: 'Last 7 days', subtext: 'Previous 7 days' },
-    { label: 'Last 30 days', subtext: 'Feb 22, 2026 - Mar 25, 2026' },
+    { label: 'Last 7 days', subtext: 'Feb 22, 2026 - Mar 02, 2026' },
+    { label: 'Last 30 days', subtext: 'Past 30 days' },
     { label: 'This Month', subtext: 'Month-to-date' },
     { label: 'Last 90 days', subtext: 'Previous quarter' },
     { label: 'All time', subtext: 'Lifetime history' },

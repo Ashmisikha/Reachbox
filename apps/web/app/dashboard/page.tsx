@@ -74,7 +74,7 @@ export default function DashboardPage() {
         description="Track campaign performance, monitor queues, and manage your email infrastructure."
         actions={
           <div className="flex items-center gap-2.5">
-            <DateRangeControl label="Feb 22, 2026 - Mar 25, 2026" />
+            <DateRangeControl label="Feb 22, 2026 - Mar 02, 2026" />
             <Link
               href="/dashboard/compose"
               data-tour="action-new-campaign"

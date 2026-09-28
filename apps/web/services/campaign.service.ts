@@ -166,3 +166,30 @@ export const senderService = {
   },
 };
 
+export interface QueueMetric {
+  name: string;
+  displayName: string;
+  description: string;
+  isPaused: boolean;
+  counts: {
+    waiting: number;
+    active: number;
+    delayed: number;
+    completed: number;
+    failed: number;
+  };
+}
+
+export interface QueueMetricsResponse {
+  timestamp: string;
+  workerConcurrency: number;
+  queues: QueueMetric[];
+}
+
+export const queueService = {
+  async getMetrics(): Promise<QueueMetricsResponse> {
+    return apiFetch('/api/admin/queues/metrics');
+  },
+};
+
+

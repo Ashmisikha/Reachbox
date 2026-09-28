@@ -30,6 +30,8 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@bull-board/api": "^9.10.1",
+    "@bull-board/express": "^9.10.1",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",

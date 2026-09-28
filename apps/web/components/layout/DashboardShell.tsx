@@ -17,6 +17,7 @@ import {
   Bell,
   LogOut,
   Mail,
+  Cpu,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
   { href: '/dashboard/scheduled',   label: 'Scheduled',   icon: Clock },
   { href: '/dashboard/sent',        label: 'Sent Emails', icon: Send },
   { href: '/dashboard/analytics',   label: 'Analytics',   icon: BarChart3 },
+  { href: '/dashboard/queues',      label: 'BullMQ Queues',icon: Cpu },
   { href: '/dashboard/senders',     label: 'Senders',     icon: Users },
   { href: '/dashboard/integrations',label: 'Integrations',icon: Plug },
   { href: '/dashboard/settings',    label: 'Settings',    icon: Settings },

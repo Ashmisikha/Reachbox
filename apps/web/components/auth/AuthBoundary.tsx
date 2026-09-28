@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React from 'react';
+import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import { LogOut, CheckCircle, Shield, User as UserIcon } from 'lucide-react';
 import { SlackConnectionCard } from '../slack/SlackConnectionCard';
@@ -46,13 +47,22 @@ export function AuthBoundary() {
             </div>
           </div>
 
-          <button
-            onClick={logout}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-colors"
-          >
-            <LogOut className="w-4 h-4 text-red-400" />
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-sm transition-colors"
+            >
+              <span>Open Dashboard</span>
+              <span>&rarr;</span>
+            </Link>
+            <button
+              onClick={logout}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-colors"
+            >
+              <LogOut className="w-4 h-4 text-red-400" />
+              Logout
+            </button>
+          </div>
         </div>
         <SlackConnectionCard isAuthenticated={true} />
       </div>

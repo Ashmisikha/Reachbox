@@ -1,4 +1,4 @@
-# ReachInbox Assignment — Antigravity Engineering Rules
+﻿# ReachInbox Assignment â€” Antigravity Engineering Rules
 
 ## 1. Project Context
 
@@ -194,23 +194,23 @@ Example conceptual flow:
 
 ```text
 API
- ↓
+ â†“
 PostgreSQL record
- ↓
+ â†“
 BullMQ delayed job
- ↓
+ â†“
 Redis
- ↓
+ â†“
 Worker
- ↓
+ â†“
 Rate-limit check
- ↓
+ â†“
 Idempotency check
- ↓
+ â†“
 Ethereal SMTP
- ↓
+ â†“
 PostgreSQL update
- ↓
+ â†“
 Elasticsearch indexing
 ```
 
@@ -328,13 +328,13 @@ Instead:
 
 ```text
 Current hour limit reached
-        ↓
+        â†“
 Determine next available hour
-        ↓
+        â†“
 Reschedule/delay job
-        ↓
+        â†“
 Preserve ordering as much as reasonably possible
-        ↓
+        â†“
 Process later
 ```
 
@@ -352,15 +352,15 @@ Required behavior:
 
 ```text
 User clicks Connect Slack
-        ↓
+        â†“
 Real OAuth authorization
-        ↓
+        â†“
 Backend receives callback
-        ↓
+        â†“
 Token/webhook stored securely
-        ↓
+        â†“
 Rate limit reached
-        ↓
+        â†“
 Backend sends real Slack message
 ```
 
@@ -368,9 +368,9 @@ If Slack is not connected:
 
 ```text
 Rate limit reached
-        ↓
+        â†“
 No Slack notification
-        ↓
+        â†“
 No application crash
 ```
 
@@ -378,7 +378,7 @@ If the user connects Slack later:
 
 ```text
 Future rate-limit events
-        ↓
+        â†“
 Slack notifications enabled
 ```
 
@@ -396,17 +396,17 @@ Required flow:
 
 ```text
 Frontend
- ↓
+ â†“
 Google OAuth
- ↓
+ â†“
 Backend callback
- ↓
+ â†“
 Validate identity
- ↓
+ â†“
 Create/find user
- ↓
+ â†“
 Authenticated session
- ↓
+ â†“
 Dashboard
 ```
 
@@ -479,9 +479,9 @@ Example:
 
 ```text
 scheduled
-    ↓
+    â†“
 processing
-    ↓
+    â†“
 sent
 ```
 
@@ -489,7 +489,7 @@ Failure:
 
 ```text
 processing
-    ↓
+    â†“
 failed
 ```
 
@@ -505,7 +505,7 @@ When email state becomes relevant for search:
 
 ```text
 PostgreSQL
-    ↓
+    â†“
 Elasticsearch index
 ```
 
@@ -549,17 +549,17 @@ Prefer something conceptually similar to:
 
 ```text
 frontend/
-├── components/
-│   ├── ui/
-│   ├── layout/
-│   ├── email/
-│   └── auth/
-├── pages/ or app/
-├── hooks/
-├── lib/
-├── services/
-├── types/
-└── styles/
+â”œâ”€â”€ components/
+â”‚   â”œâ”€â”€ ui/
+â”‚   â”œâ”€â”€ layout/
+â”‚   â”œâ”€â”€ email/
+â”‚   â””â”€â”€ auth/
+â”œâ”€â”€ pages/ or app/
+â”œâ”€â”€ hooks/
+â”œâ”€â”€ lib/
+â”œâ”€â”€ services/
+â”œâ”€â”€ types/
+â””â”€â”€ styles/
 ```
 
 Exact structure depends on React vs Next.js.
@@ -646,11 +646,11 @@ Prefer:
 
 ```text
 route
- ↓
+ â†“
 controller
- ↓
+ â†“
 service
- ↓
+ â†“
 repository/data access
 ```
 
@@ -1200,17 +1200,17 @@ Optimize for:
 
 ```text
 Correctness
-    ↓
+    â†“
 Persistence
-    ↓
+    â†“
 Reliability
-    ↓
+    â†“
 Security
-    ↓
+    â†“
 Testability
-    ↓
+    â†“
 Maintainability
-    ↓
+    â†“
 UI quality
 ```
 
@@ -1221,3 +1221,1090 @@ Every change must have a reason.
 Every requirement must be testable.
 
 Every major architectural decision must be explainable by the developer.
+
+# 43. Antigravity Implementation Role
+
+Antigravity is the primary coding agent for this repository.
+
+When the user provides a phase-specific implementation prompt:
+
+1. Inspect the current repository.
+2. Read the relevant existing files.
+3. Implement the requested functionality directly in the repository.
+4. Create and modify files as required.
+5. Install dependencies only when necessary.
+6. Run the relevant tests/typechecks/build commands.
+7. Fix implementation errors found during verification.
+8. Do NOT stop after merely explaining what code should be written.
+9. Do NOT return large code blocks instead of modifying the repository when repository access is available.
+
+The user and ChatGPT may provide architecture, debugging, review, and implementation guidance.
+
+Antigravity must follow the current phase and must not implement future phases unless explicitly instructed.
+
+---
+
+# 44. ChatGPT + Antigravity Workflow
+
+This project may be developed collaboratively between ChatGPT and Antigravity.
+
+### ChatGPT responsibilities
+
+ChatGPT may:
+
+- Design architecture.
+- Break the assignment into phases.
+- Generate implementation code.
+- Review Antigravity's implementation.
+- Analyze errors and stack traces.
+- Suggest fixes.
+- Explain technical decisions.
+- Create configuration files.
+- Review security and reliability.
+- Audit assignment requirements.
+- Prepare README/documentation.
+- Prepare tests and test scenarios.
+- Prepare the final demo script.
+
+### Antigravity responsibilities
+
+Antigravity should:
+
+- Inspect the actual repository.
+- Create/edit files.
+- Run commands.
+- Install required dependencies.
+- Run tests.
+- Run builds.
+- Inspect runtime errors.
+- Implement approved changes.
+- Report actual verification results.
+
+### Important
+
+Neither agent should blindly overwrite the work of the other.
+
+Before making substantial changes:
+
+- Inspect current implementation.
+- Preserve working functionality.
+- Modify only what is necessary.
+- Verify after changes.
+
+---
+
+# 45. When ChatGPT Provides Code
+
+If ChatGPT provides implementation code or a file specification:
+
+- Treat it as implementation guidance.
+- Adapt it to the actual repository structure.
+- Do not blindly paste code if existing architecture differs.
+- Resolve imports and types against the current codebase.
+- Run tests after integration.
+- Fix compatibility issues rather than duplicating functionality.
+
+The final repository must remain coherent and understandable.
+
+---
+
+# 46. When Antigravity Encounters an Error
+
+Do not repeatedly guess at fixes.
+
+If an error cannot be resolved confidently:
+
+1. Capture the complete relevant error.
+2. Identify the affected file and operation.
+3. Stop making unrelated changes.
+4. Report the error clearly.
+5. Ask ChatGPT/user for assistance when appropriate.
+
+Do not hide or suppress the error just to complete the phase.
+
+---
+
+# 47. ChatGPT Review Loop
+
+For important phases, use this workflow:
+
+````text
+Phase Prompt
+     â†“
+Antigravity implements
+     â†“
+Run tests/build
+     â†“
+Collect results
+     â†“
+ChatGPT reviews
+     â†“
+Fix issues
+     â†“
+Run tests again
+     â†“
+Phase accepted
+     â†“
+Next phase
+
+### And yes â€” I can generate the actual code
+
+For example, when we start **Phase 0**, I won't just tell you:
+
+> "Create an Express server."
+
+I can produce the actual implementation structure and code, such as:
+
+```text
+reachinbox-scheduler/
+â”œâ”€â”€ apps/
+â”‚   â”œâ”€â”€ api/
+â”‚   â””â”€â”€ web/
+â”œâ”€â”€ packages/
+â”‚   â””â”€â”€ shared/
+â”œâ”€â”€ infrastructure/
+â”‚   â””â”€â”€ docker/
+â”œâ”€â”€ docker-compose.yml
+â”œâ”€â”€ .env.example
+â”œâ”€â”€ .gitignore
+â”œâ”€â”€ package.json
+â”œâ”€â”€ tsconfig.json
+â””â”€â”€ AGENTS.md
+
+
+
+
+
+# Human-Written, Production-Grade Code Rules
+
+These rules apply to every phase of the ReachInbox assignment.
+
+The goal is to produce code that is:
+
+* Production-grade
+* Original
+* Readable
+* Maintainable
+* Easy for a developer to understand
+* Consistent across the repository
+* Appropriate for a real engineering team
+
+Do NOT optimize for generating the maximum amount of code.
+
+Optimize for correct, understandable engineering.
+
+---
+
+## 1. Write Code a Human Developer Would Actually Maintain
+
+Code should feel natural and intentional.
+
+Prefer:
+
+```ts
+const scheduledEmail = await emailRepository.create(input);
+
+const delay = getScheduleDelay(scheduledEmail.scheduledAt);
+
+await emailQueue.add(
+  "send-email",
+  { emailId: scheduledEmail.id },
+  { delay }
+);
+````
+
+over unnecessarily abstract or clever code.
+
+Avoid:
+
+- excessive functional programming
+- unnecessary one-line expressions
+- deeply nested abstractions
+- excessive generic utilities
+- unnecessary design patterns
+- over-engineering simple functionality
+
+---
+
+# 2. Prefer Readability Over Cleverness
+
+Bad:
+
+```ts
+const result = await Promise.all(
+  items.map(async (item) => (condition(item) ? process(item) : fallback(item)))
+);
+```
+
+when the logic becomes difficult to understand.
+
+Prefer clear code:
+
+```ts
+const results = [];
+
+for (const item of items) {
+  if (condition(item)) {
+    results.push(await process(item));
+    continue;
+  }
+
+  results.push(await fallback(item));
+}
+```
+
+Performance should still be considered, but clarity is important.
+
+---
+
+# 3. Use Meaningful Names
+
+Prefer:
+
+```ts
+scheduledEmail;
+senderId;
+scheduledAt;
+hourlyLimit;
+rateLimitKey;
+queueJobId;
+smtpMessageId;
+```
+
+Avoid:
+
+```ts
+data;
+obj;
+item;
+temp;
+x;
+result2;
+payload2;
+foo;
+bar;
+```
+
+Short names are acceptable for genuinely local concepts such as:
+
+```ts
+i;
+id;
+db;
+req;
+res;
+```
+
+when their meaning is obvious from context.
+
+---
+
+# 4. Keep Functions Small
+
+A function should have one clear responsibility.
+
+Avoid functions such as:
+
+```ts
+processEverything();
+```
+
+that:
+
+- validate requests
+- access the database
+- schedule BullMQ jobs
+- send emails
+- update Elasticsearch
+- send Slack notifications
+
+all in one place.
+
+Prefer:
+
+```text
+controller
+   â†“
+service
+   â†“
+repository
+   â†“
+queue
+```
+
+and separate responsibilities appropriately.
+
+---
+
+# 5. Do Not Over-Abstraction
+
+Do not create abstractions simply because they look "enterprise."
+
+For example, do not create:
+
+```text
+EmailFactory
+EmailFactoryProvider
+EmailFactoryProviderResolver
+EmailProcessingStrategyFactory
+```
+
+when a simple service is enough.
+
+Introduce an abstraction when it provides a real benefit such as:
+
+- replacing an implementation
+- testing
+- separating infrastructure from business logic
+- handling multiple providers
+- enforcing a meaningful boundary
+
+Every abstraction should have a reason.
+
+---
+
+# 6. Comments Should Explain WHY
+
+Do not write comments that simply repeat the code.
+
+Bad:
+
+```ts
+// Get user
+const user = await userRepository.findById(userId);
+```
+
+Good:
+
+```ts
+// We load the user before scheduling so the job contains only the
+// stable user ID rather than copying potentially stale account data.
+const user = await userRepository.findById(userId);
+```
+
+Comments should explain:
+
+- why something exists
+- why a non-obvious decision was made
+- important edge cases
+- concurrency considerations
+- reliability considerations
+
+Do not comment every line.
+
+---
+
+# 7. Avoid AI-Looking Boilerplate
+
+Do not generate repetitive comments such as:
+
+```ts
+// This function handles...
+// This service is responsible for...
+// Initialize the...
+// Create the...
+```
+
+unless the explanation adds real value.
+
+Avoid excessive section headers inside every file.
+
+Avoid unnecessarily verbose JSDoc for obvious functions.
+
+---
+
+# 8. Keep Imports Clean
+
+Do not create giant import blocks containing unused dependencies.
+
+Use the project's formatter/linter.
+
+Remove unused imports.
+
+Avoid importing an entire library when only one function is needed, where the library supports selective imports.
+
+---
+
+# 9. TypeScript
+
+Use TypeScript properly.
+
+Prefer:
+
+```ts
+interface ScheduleEmailInput {
+  subject: string;
+  body: string;
+  recipients: string[];
+  scheduledAt: Date;
+}
+```
+
+over:
+
+```ts
+const input: any = ...
+```
+
+Avoid `any`.
+
+If `any` is genuinely unavoidable, document why.
+
+Prefer explicit return types for important public functions and service boundaries.
+
+Use discriminated unions where they make state handling clearer.
+
+Do not use TypeScript tricks simply to make code look sophisticated.
+
+---
+
+# 10. Error Handling Should Be Intentional
+
+Do not write:
+
+```ts
+try {
+  ...
+} catch {
+  return null;
+}
+```
+
+just to suppress errors.
+
+Errors should either:
+
+- be handled meaningfully
+- be transformed into a domain/application error
+- be logged and rethrown
+- be handled by centralized middleware
+
+Do not hide failures.
+
+---
+
+# 11. Production-Grade Does NOT Mean Over-Engineered
+
+Production-grade means the application handles real-world failure cases.
+
+It does NOT mean:
+
+- hundreds of unnecessary files
+- excessive abstractions
+- unnecessary microservices
+- complicated patterns everywhere
+- huge configuration systems
+
+Prefer a clean modular monolith for this assignment.
+
+---
+
+# 12. Database Code
+
+Database operations must be clear.
+
+Use transactions where multiple related writes must succeed together.
+
+Use:
+
+- indexes
+- unique constraints
+- foreign keys
+- proper timestamps
+- appropriate data types
+
+Do not perform important state transitions using multiple unrelated queries when an atomic transaction is required.
+
+---
+
+# 13. Queue Code
+
+BullMQ code must be explicit and understandable.
+
+A developer should be able to follow:
+
+```text
+API request
+    â†“
+Database record
+    â†“
+Queue job
+    â†“
+Delayed execution
+    â†“
+Worker
+    â†“
+Rate limit
+    â†“
+Idempotency
+    â†“
+SMTP
+    â†“
+Database update
+    â†“
+Search indexing
+```
+
+Do not hide this flow behind unnecessary abstractions.
+
+---
+
+# 14. Concurrency Code
+
+Concurrency-sensitive code must be written defensively.
+
+Assume:
+
+```text
+multiple workers
+multiple processes
+multiple requests
+```
+
+can operate simultaneously.
+
+Do not rely on:
+
+```ts
+let isProcessing = false;
+```
+
+or other process-local state for distributed coordination.
+
+Use:
+
+- database constraints
+- transactions
+- Redis atomic operations
+- BullMQ mechanisms
+- appropriate locks
+
+where required.
+
+---
+
+# 15. Idempotency Code
+
+Idempotency must be obvious from the code.
+
+A developer reviewing the worker should be able to understand:
+
+```text
+Is this email already sent?
+        â†“
+Yes â†’ stop safely
+No
+ â†“
+Atomically claim processing
+ â†“
+Send
+ â†“
+Persist result
+```
+
+Do not hide critical idempotency behavior inside obscure utilities.
+
+---
+
+# 16. Rate Limiting Code
+
+The rate limiter should clearly show:
+
+```text
+Identify sender
+      â†“
+Identify hour window
+      â†“
+Atomically check/increment Redis counter
+      â†“
+Limit available?
+   â†™       â†˜
+ YES       NO
+ â†“          â†“
+Send       Reschedule
+```
+
+The implementation must remain safe when multiple workers run simultaneously.
+
+Do not use in-memory counters.
+
+---
+
+# 17. Configuration
+
+Never hardcode operational settings such as:
+
+```ts
+const MAX_EMAILS_PER_HOUR = 200;
+```
+
+Use environment/configuration:
+
+```env
+MAX_EMAILS_PER_HOUR=200
+WORKER_CONCURRENCY=5
+MIN_EMAIL_DELAY_MS=2000
+```
+
+Access configuration through a centralized typed configuration module rather than reading `process.env` throughout the entire application.
+
+---
+
+# 18. Logging
+
+Logs should be useful to a developer investigating a production problem.
+
+Good:
+
+```text
+Email job started
+jobId=...
+emailId=...
+senderId=...
+```
+
+Good:
+
+```text
+Hourly sender limit reached
+senderId=...
+window=...
+rescheduleAt=...
+```
+
+Do not log:
+
+- passwords
+- OAuth access tokens
+- API keys
+- SMTP passwords
+- Slack tokens
+- session secrets
+
+Avoid excessive logs for normal successful operations.
+
+---
+
+# 19. API Code
+
+Keep Express controllers thin.
+
+Prefer:
+
+```text
+Route
+  â†“
+Controller
+  â†“
+Service
+  â†“
+Repository
+```
+
+Example:
+
+```ts
+export async function scheduleEmail(req: Request, res: Response, next: NextFunction) {
+  try {
+    const input = scheduleEmailSchema.parse(req.body);
+
+    const email = await emailService.schedule(input);
+
+    res.status(201).json(email);
+  } catch (error) {
+    next(error);
+  }
+}
+```
+
+The controller should not contain the complete scheduling algorithm.
+
+---
+
+# 20. Frontend Code Style
+
+Frontend code should also look naturally written.
+
+Avoid giant components such as:
+
+```text
+Dashboard.tsx = 1500 lines
+```
+
+Separate meaningful components:
+
+```text
+Dashboard
+â”œâ”€â”€ Header
+â”œâ”€â”€ EmailTabs
+â”œâ”€â”€ ScheduledEmailTable
+â”œâ”€â”€ SentEmailTable
+â”œâ”€â”€ ComposeEmailModal
+â””â”€â”€ EmptyState
+```
+
+But do not split tiny pieces into components unnecessarily.
+
+---
+
+# 21. React State
+
+Keep state close to where it is used.
+
+Do not introduce global state management unless the application actually needs it.
+
+Use appropriate tools such as:
+
+- React state
+- context where appropriate
+- server state/data fetching library if justified
+
+Do not add Redux simply because it is popular.
+
+---
+
+# 22. UI Components
+
+Reusable components should be genuinely reusable.
+
+Examples:
+
+```text
+Button
+Input
+Modal
+Table
+Badge
+Toast
+LoadingState
+EmptyState
+```
+
+Do not create a separate component for every `<div>`.
+
+---
+
+# 23. Frontend API Layer
+
+Do not scatter raw `fetch()` calls throughout components.
+
+Prefer a small API layer:
+
+```text
+lib/
+services/
+api/
+```
+
+For example:
+
+```ts
+emailService.schedule(...)
+emailService.getScheduled(...)
+emailService.getSent(...)
+```
+
+This keeps UI components focused on UI.
+
+---
+
+# 24. Validation
+
+Validate input on both:
+
+### Frontend
+
+For good UX.
+
+### Backend
+
+For security and correctness.
+
+Never trust frontend validation.
+
+---
+
+# 25. Async Code
+
+Prefer readable async/await.
+
+Avoid deeply nested promises.
+
+Good:
+
+```ts
+const user = await userRepository.findById(userId);
+
+const email = await emailRepository.create(input);
+
+await queue.add('send-email', {
+  emailId: email.id,
+});
+```
+
+Use `Promise.all()` when operations are genuinely independent and parallel execution is safe.
+
+---
+
+# 26. Avoid Magic Numbers
+
+Bad:
+
+```ts
+if (attempts > 3) {
+```
+
+Prefer configuration or a named constant when the value has domain meaning:
+
+```ts
+const MAX_SEND_ATTEMPTS = 3;
+```
+
+For operational settings, prefer environment configuration.
+
+---
+
+# 27. Avoid Copy-Paste
+
+If the same business logic appears in multiple places:
+
+1. Identify the duplicated behavior.
+2. Determine whether it belongs in a shared service/helper.
+3. Extract it only if the abstraction is clear.
+
+Do not prematurely abstract code that is still evolving.
+
+---
+
+# 28. Do Not Rewrite Working Code Without Reason
+
+If existing code already works:
+
+- inspect it
+- understand it
+- preserve it
+
+Do not rewrite an entire file merely because your preferred style is different.
+
+If refactoring is needed, explain the reason and keep the change focused.
+
+---
+
+# 29. Do Not Fake Production Behavior
+
+Never replace real requirements with fake behavior.
+
+Do not use:
+
+```ts
+console.log('Slack notification sent');
+```
+
+instead of calling Slack.
+
+Do not use:
+
+```ts
+setTimeout(...)
+```
+
+instead of persistent BullMQ scheduling.
+
+Do not use:
+
+```ts
+const emails = [...]
+```
+
+instead of PostgreSQL.
+
+Do not use:
+
+```ts
+emails.filter(...)
+```
+
+as a replacement for Elasticsearch when Elasticsearch search is required.
+
+Do not use fake Google users instead of OAuth.
+
+---
+
+# 30. Handle Failure Paths
+
+Every external dependency can fail.
+
+Consider failures from:
+
+- PostgreSQL
+- Redis
+- BullMQ
+- Ethereal SMTP
+- Elasticsearch
+- Google OAuth
+- Slack API
+
+The application should fail safely.
+
+Do not mark an email as successfully sent before the required operation actually succeeds.
+
+Do not silently discard failed operations.
+
+---
+
+# 31. Production-Grade State Transitions
+
+Important state transitions should be explicit.
+
+Example:
+
+```text
+scheduled
+    â†“
+processing
+    â†“
+sent
+```
+
+Failure:
+
+```text
+processing
+    â†“
+failed
+```
+
+Rate limit:
+
+```text
+scheduled
+    â†“
+rate-limited
+    â†“
+scheduled
+```
+
+The exact state model may differ, but it must be deliberate and documented.
+
+---
+
+# 32. Testing Style
+
+Tests should test behavior, not implementation details.
+
+Prefer:
+
+```text
+Given an email scheduled for the future,
+when the worker is restarted,
+then the email remains scheduled and is eventually processed.
+```
+
+over tests that only verify internal function calls.
+
+Important production scenarios must be tested.
+
+---
+
+# 33. Code Review Standard
+
+Before considering a phase complete, ask:
+
+### Can another developer understand this code quickly?
+
+### Can the developer explain why each important piece exists?
+
+### What happens if the process crashes?
+
+### What happens if two workers execute simultaneously?
+
+### What happens if Redis fails?
+
+### What happens if PostgreSQL fails?
+
+### What happens if SMTP fails?
+
+### What happens if the same job executes twice?
+
+### Are secrets protected?
+
+### Are configuration values externalized?
+
+### Are errors visible?
+
+### Are critical paths tested?
+
+If these questions cannot be answered from the implementation, improve the implementation before moving on.
+
+---
+
+# 34. Originality
+
+The implementation must be independently developed.
+
+Do not copy completed solutions from GitHub or other candidates.
+
+Technical documentation and libraries may be used as references.
+
+Do not intentionally imitate another repository's implementation line-for-line.
+
+The architecture should be based on the assignment requirements and sound engineering decisions.
+
+---
+
+# 35. AI-Assisted Development
+
+AI tools may assist with implementation, debugging, architecture, and documentation.
+
+However:
+
+- Review generated code.
+- Understand generated code.
+- Adapt it to the actual repository.
+- Remove unnecessary generated abstractions.
+- Fix inconsistencies.
+- Do not blindly accept generated code.
+- Do not generate large unrelated sections simply to increase code volume.
+
+The final repository should be understandable by the developer submitting it.
+
+---
+
+# 36. Final Principle
+
+Write code that looks like it was created by a competent engineer who had time to think about the system.
+
+Not:
+
+```text
+"Generate everything."
+```
+
+Instead:
+
+```text
+Understand
+   â†“
+Design
+   â†“
+Implement
+   â†“
+Test
+   â†“
+Review
+   â†“
+Refine
+```
+
+The final implementation should prioritize:
+
+1. Correctness
+2. Reliability
+3. Security
+4. Persistence
+5. Concurrency safety
+6. Testability
+7. Maintainability
+8. Readability
+9. Performance
+10. UI quality

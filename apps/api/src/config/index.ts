@@ -2,7 +2,6 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 
-// Load .env from root or local workspace
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
@@ -17,6 +16,12 @@ const configSchema = z.object({
       'postgresql://reachinbox:reachinbox_secret@localhost:5432/reachinbox_db?schema=public'
     ),
   REDIS_URL: z.string().default('redis://localhost:6379'),
+
+  // Worker & operational throttling defaults (AGENTS.md §7, §9, §10, §17)
+  WORKER_CONCURRENCY: z.coerce.number().default(5),
+  MIN_EMAIL_DELAY_MS: z.coerce.number().default(2000),
+  MAX_EMAILS_PER_HOUR: z.coerce.number().default(200),
+  MAX_EMAILS_PER_HOUR_PER_SENDER: z.coerce.number().default(50),
 });
 
 export type Config = z.infer<typeof configSchema>;

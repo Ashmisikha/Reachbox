@@ -1,3 +1,11 @@
+import {
+  CampaignAnalytics,
+  CampaignEvent,
+  CampaignStep,
+  CreateCampaignStepInput,
+  SenderHealthMetrics,
+} from '@reachinbox/shared';
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SenderAccount {
@@ -11,13 +19,18 @@ export interface SenderAccount {
 export interface Campaign {
   id: string;
   subject: string;
+  body?: string;
   status: string;
   startAt: string;
   delayMs: number;
   hourlyLimit: number;
   createdAt: string;
   sender: { id: string; email: string; name: string | null };
+  stepCount?: number;
   messageCount: number;
+  steps?: CampaignStep[];
+  analytics?: CampaignAnalytics & { failureBreakdown?: Record<string, number> };
+  events?: CampaignEvent[];
 }
 
 export interface ScheduledEmail {
@@ -37,6 +50,8 @@ export interface SentEmail {
   subject: string;
   status: string;
   sentAt: string | null;
+  messageId?: string;
+  previewUrl?: string;
   campaign: { id: string; subject: string };
   sender: { id: string; email: string; name: string | null };
 }
@@ -64,6 +79,7 @@ export interface CreateCampaignPayload {
   startAt: string;
   delayMs: number;
   hourlyLimit: number;
+  steps?: CreateCampaignStepInput[];
 }
 
 // ─── Service ───────────────────────────────────────────────────────────────────
@@ -104,11 +120,21 @@ export const campaignService = {
     return apiFetch(`/api/campaigns/${id}`);
   },
 
-  async create(payload: CreateCampaignPayload): Promise<{ campaignId: string; messageCount: number; scheduledCount: number }> {
+  async create(payload: CreateCampaignPayload): Promise<{ campaignId: string; messageCount: number; scheduledCount: number; stepCount: number }> {
     return apiFetch('/api/campaigns', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
+  },
+
+  async cancel(id: string): Promise<{ success: boolean; message: string }> {
+    return apiFetch(`/api/campaigns/${id}/cancel`, {
+      method: 'POST',
+    });
+  },
+
+  async getEvents(id: string, limit = 50): Promise<{ events: CampaignEvent[] }> {
+    return apiFetch(`/api/campaigns/${id}/events?limit=${limit}`);
   },
 
   async getStats(): Promise<DashboardStats> {
@@ -164,6 +190,10 @@ export const senderService = {
       body: JSON.stringify(payload),
     });
   },
+
+  async getHealth(): Promise<{ senders: SenderHealthMetrics[] }> {
+    return apiFetch('/api/senders/health');
+  },
 };
 
 export interface QueueMetric {
@@ -191,5 +221,3 @@ export const queueService = {
     return apiFetch('/api/admin/queues/metrics');
   },
 };
-
-

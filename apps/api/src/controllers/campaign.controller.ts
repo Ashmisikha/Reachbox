@@ -4,10 +4,13 @@ import {
   createCampaign,
   getCampaigns,
   getCampaignById,
+  cancelCampaign,
   getScheduledEmails,
   getSentEmails,
   getDashboardStats,
 } from '../services/campaign.service';
+import { CampaignEventService } from '../services/campaign-event.service';
+import { SenderHealthService } from '../services/sender-health.service';
 import { senderRepository } from '../repositories/sender.repository';
 import { AppError } from '../middleware/errorHandler';
 
@@ -200,6 +203,57 @@ export async function createSenderHandler(
     });
 
     res.status(201).json({ sender });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function cancelCampaignHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+    const result = await cancelCampaign(req.params['id'] as string, req.user.id);
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function campaignEventsHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+    // Verify campaign ownership
+    await getCampaignById(req.params['id'] as string, req.user.id);
+    const limit = req.query['limit'] ? parseInt(req.query['limit'] as string, 10) : 50;
+    const events = await CampaignEventService.getEvents(req.params['id'] as string, limit);
+    res.status(200).json({ events });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function senderHealthHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, 'UNAUTHORIZED');
+    }
+    const senders = await SenderHealthService.getSendersHealth(req.user.id);
+    res.status(200).json({ senders });
   } catch (error) {
     next(error);
   }

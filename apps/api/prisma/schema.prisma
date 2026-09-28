@@ -31,6 +31,7 @@ enum EmailStatus {
   SENT
   FAILED
   CANCELLED
+  SUPPRESSED
 }
 
 enum JobStatus {
@@ -57,6 +58,8 @@ model User {
   slackConnection SlackConnection?
   sessions        Session[]
   contacts        Contact[]
+  templates       EmailTemplate[]
+  suppressions    Suppression[]
 
   @@index([status])
   @@index([googleId])
@@ -116,9 +119,11 @@ model EmailCampaign {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sender      SenderAccount  @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender      SenderAccount   @relation(fields: [senderId], references: [id], onDelete: Restrict)
   messages    EmailMessage[]
+  events      CampaignEvent[]
+  steps       CampaignStep[]
 
   @@index([userId, status])
   @@index([senderId, status])
@@ -130,6 +135,7 @@ model EmailMessage {
   id             String      @id @default(uuid()) @db.Uuid
   campaignId     String      @map("campaign_id") @db.Uuid
   senderId       String      @map("sender_id") @db.Uuid
+  stepId         String?     @map("step_id") @db.Uuid
 
   recipient      String
   subject        String
@@ -142,6 +148,8 @@ model EmailMessage {
 
   attemptCount   Int         @default(0) @map("attempt_count")
   lastError      String?     @map("last_error")
+  isPermanent    Boolean     @default(false) @map("is_permanent")
+  nextRetryAt    DateTime?   @map("next_retry_at")
 
   idempotencyKey String      @unique @map("idempotency_key")
 
@@ -150,10 +158,12 @@ model EmailMessage {
 
   campaign       EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   sender         SenderAccount @relation(fields: [senderId], references: [id], onDelete: Restrict)
+  step           CampaignStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
   job            EmailJob?
 
   @@index([campaignId, status])
   @@index([senderId, status])
+  @@index([stepId])
   @@index([scheduledAt, status])
   @@index([recipient])
   @@index([sentAt])
@@ -235,4 +245,69 @@ model Contact {
   @@index([userId, status])
   @@index([userId, email])
   @@map("contacts")
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, name])
+  @@map("email_templates")
+}
+
+model CampaignEvent {
+  id          String        @id @default(uuid()) @db.Uuid
+  campaignId  String        @map("campaign_id") @db.Uuid
+  type        String
+  description String
+  metadata    Json?
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  campaign    EmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, createdAt])
+  @@map("campaign_events")
+}
+
+model CampaignStep {
+  id          String         @id @default(uuid()) @db.Uuid
+  campaignId  String         @map("campaign_id") @db.Uuid
+  stepOrder   Int            @map("step_order")
+  delayDays   Int            @default(0) @map("delay_days")
+  delayHours  Int            @default(0) @map("delay_hours")
+  subject     String
+  body        String
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  campaign    EmailCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  messages    EmailMessage[]
+
+  @@unique([campaignId, stepOrder])
+  @@index([campaignId])
+  @@map("campaign_steps")
+}
+
+model Suppression {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  email     String
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, email])
+  @@index([userId])
+  @@index([userId, email])
+  @@map("suppressions")
 }

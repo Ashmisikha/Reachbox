@@ -4,6 +4,9 @@ import {
   createCampaignHandler,
   listCampaignsHandler,
   getCampaignHandler,
+  cancelCampaignHandler,
+  campaignEventsHandler,
+  senderHealthHandler,
   dashboardStatsHandler,
   scheduledEmailsHandler,
   sentEmailsHandler,
@@ -23,6 +26,8 @@ router.get('/stats', dashboardStatsHandler);
 router.post('/', createCampaignHandler);
 router.get('/', listCampaignsHandler);
 router.get('/:id', getCampaignHandler);
+router.post('/:id/cancel', cancelCampaignHandler);
+router.get('/:id/events', campaignEventsHandler);
 
 export default router;
 
@@ -37,4 +42,5 @@ export const senderRoutes = Router();
 senderRoutes.use(requireAuth);
 senderRoutes.get('/', listSendersHandler);
 senderRoutes.post('/', createSenderHandler);
+senderRoutes.get('/health', senderHealthHandler);
 

@@ -4,23 +4,27 @@ This directory houses infrastructure configuration and docker resources for the 
 
 ## Services
 
-- **PostgreSQL 16**: Relational storage for email jobs, users, sender accounts, and delivery logs.
-- **Redis 7**: High-performance in-memory data store for BullMQ delayed queue processing, rate limiting, and distributed worker synchronization.
+- **PostgreSQL 16**: Relational storage for email jobs, users, sender accounts, campaigns, and delivery logs.
+- **Redis 7**: In-memory data store for BullMQ delayed queue processing, atomic rate limiting, and distributed worker synchronization.
+- **Elasticsearch 8.13.4**: Search engine for asynchronous full-text indexing and multi-field email search.
 
 ## Running Locally
 
 From the root of the repository:
 
 ```bash
-# Start all infrastructure services
-docker compose up -d
+# Start all infrastructure services (PostgreSQL, Redis, Elasticsearch)
+npm run docker:up
+# or: docker compose up -d
 
 # Check service logs
-docker compose logs -f
+npm run docker:logs
+# or: docker compose logs -f
 
 # Check health status
 docker compose ps
 
 # Stop all services
-docker compose down
+npm run docker:down
+# or: docker compose down
 ```

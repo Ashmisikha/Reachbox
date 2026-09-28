@@ -1,18 +1,51 @@
 'use client';
-import React, { useState } from 'react';
-import { useSenders } from '../../../hooks/useCampaigns';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { senderService } from '../../../services/campaign.service';
-import { Card, StatusBadge, LoadingState, EmptyState, ErrorState } from '../../../components/ui';
-import { Users, Plus, RefreshCw } from 'lucide-react';
+import { SenderHealthMetrics } from '@reachinbox/shared';
+import {
+  Card,
+  LoadingState,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+} from '../../../components/ui';
+import {
+  Users,
+  Plus,
+  RotateCw,
+  X,
+  CheckCircle2,
+  Clock,
+} from 'lucide-react';
 
 export default function SendersPage() {
-  const { senders, isLoading, error, refresh } = useSenders();
+  const [senders, setSenders] = useState<SenderHealthMetrics[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const loadSenders = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await senderService.getHealth();
+      setSenders(res.senders || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load sender health metrics');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSenders();
+  }, [loadSenders]);
 
   const handleAddSender = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +55,7 @@ export default function SendersPage() {
 
     try {
       await senderService.create({ email: email.trim(), name: name.trim() || undefined });
-      await refresh();
+      await loadSenders();
       setShowAddModal(false);
       setEmail('');
       setName('');
@@ -35,157 +68,195 @@ export default function SendersPage() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sender Accounts</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Manage authenticated email senders for your scheduling campaigns
-          </p>
-        </div>
+      {/* Header */}
+      <PageHeader
+        title="Sender Health &amp; Operations"
+        description="Live operational telemetry, atomic hourly capacity tracking, and rate-limit states across distributed workers."
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadSenders}
+              className="p-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-2xs"
+              title="Refresh sender metrics"
+            >
+              <RotateCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Sender</span>
+            </button>
+          </div>
+        }
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => refresh()}
-            className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors shadow-xs"
-            title="Refresh senders"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Connect Sender</span>
-          </button>
-        </div>
-      </div>
+      {/* Content */}
+      {isLoading ? (
+        <LoadingState message="Querying live Redis rate-limit and PostgreSQL counters..." />
+      ) : error ? (
+        <ErrorState message={error} onRetry={loadSenders} />
+      ) : senders.length === 0 ? (
+        <Card className="p-8">
+          <EmptyState
+            icon={<Users className="w-6 h-6 text-slate-400" />}
+            title="No senders configured"
+            description="Add an authorized email sender to bind with your campaigns and enforce hourly limits."
+            action={
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add First Sender</span>
+              </button>
+            }
+          />
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {senders.map((s) => {
+              const usagePercent = Math.min(100, Math.round((s.sentThisHour / (s.hourlyLimit || 1)) * 100));
+              const isHealthy = s.status === 'ACTIVE';
+              const isRateLimited = s.status === 'RATE_LIMITED';
 
-      {/* ─── Add Sender Modal ────────────────────────────────────────────── */}
+              return (
+                <div
+                  key={s.id}
+                  className="bg-white border border-slate-200 rounded-lg p-4 shadow-2xs space-y-3 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-slate-900 truncate" title={s.email}>
+                          {s.email}
+                        </h3>
+                        <span className="text-[11px] text-slate-500">{s.name}</span>
+                      </div>
+                      <div>
+                        {isHealthy ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Healthy
+                          </span>
+                        ) : isRateLimited ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            Rate Limited
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                            {s.status}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Hourly Capacity Bar */}
+                    <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">Hourly Capacity</span>
+                        <span className="font-mono text-slate-900 font-semibold">
+                          {s.sentThisHour} / {s.hourlyLimit} sent
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          style={{ width: `${usagePercent}%` }}
+                          className={`h-full transition-all duration-300 ${
+                            usagePercent >= 90 ? 'bg-amber-500' : 'bg-blue-600'
+                          }`}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-slate-400">
+                        <span>Remaining: {s.remainingCapacity} slots</span>
+                        <span>{100 - usagePercent}% window remaining</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Failed Sends</span>
+                      <span className="font-bold text-slate-800">{s.failedCount}</span>
+                    </div>
+                    <div className="bg-slate-50 p-2 rounded border border-slate-100">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Rate-Limit Hits</span>
+                      <span className="font-bold text-slate-800">{s.rateLimitEventsCount}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
-          <Card className="max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900">Connect Sender Account</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
+              <h2 className="text-sm font-semibold text-slate-900">Add New Sender Account</h2>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddSender} className="space-y-4">
+            <form onSubmit={handleAddSender} className="p-5 space-y-4">
+              {formError && (
+                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+                  {formError}
+                </div>
+              )}
+
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Sender Email Address *
-                </label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Sender Email</label>
                 <input
                   type="email"
                   required
+                  placeholder="e.g. sales@yourcompany.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="marketing@reachinbox.ai"
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-hidden focus:ring-1 focus:ring-blue-500 text-slate-900"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Display Name
-                </label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Sender Display Name</label>
                 <input
                   type="text"
+                  placeholder="e.g. Sarah Connor"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="ReachInbox Growth"
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-hidden focus:ring-1 focus:ring-blue-500 text-slate-900"
                 />
               </div>
 
-              {formError && <p className="text-xs text-rose-600">{formError}</p>}
-
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-medium"
+                  className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs disabled:opacity-50"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-semibold rounded-md shadow-xs transition-colors"
                 >
-                  {isSubmitting ? 'Saving...' : 'Connect'}
+                  {isSubmitting ? 'Saving...' : 'Add Sender'}
                 </button>
               </div>
             </form>
-          </Card>
-        </div>
-      )}
-
-      {/* ─── Main Content ────────────────────────────────────────────────── */}
-      {isLoading ? (
-        <LoadingState message="Loading sender accounts..." />
-      ) : error ? (
-        <ErrorState message={error} onRetry={refresh} />
-      ) : senders.length === 0 ? (
-        <Card className="p-8">
-          <EmptyState
-            icon={<Users className="w-6 h-6 text-slate-400" />}
-            title="No sender accounts"
-            description="You need at least one connected email sender to schedule campaigns."
-            action={
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 shadow-sm"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Connect First Sender</span>
-              </button>
-            }
-          />
-        </Card>
-      ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] text-slate-500 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="px-6 py-3">Display Name</th>
-                  <th className="px-6 py-3">Email Address</th>
-                  <th className="px-6 py-3">Status</th>
-                  <th className="px-6 py-3">Connected Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {senders.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-6 py-3 font-semibold text-slate-900">
-                      {s.name || '—'}
-                    </td>
-                    <td className="px-6 py-3 font-mono text-slate-700">
-                      {s.email}
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap">
-                      <StatusBadge status={s.status} />
-                    </td>
-                    <td className="px-6 py-3 text-slate-500 whitespace-nowrap">
-                      {new Date(s.createdAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

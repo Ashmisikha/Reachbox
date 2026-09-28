@@ -8,6 +8,18 @@ import { emailIndexQueue } from './queues/email-index.queue';
 import { closeRedisConnection } from './queues/redis';
 import { SmtpTransportManager } from './services/smtp';
 import { closeElasticsearchClient } from './services/search';
+import { createEmailWorker } from './workers/email.worker';
+import { createEmailIndexWorker } from './workers/email-index.worker';
+import { EtherealEmailTransport } from './services/smtp/ethereal.transport';
+
+const etherealTransport = new EtherealEmailTransport();
+const emailWorker = createEmailWorker({
+  transport: etherealTransport,
+  minimumDelayMs: config.MIN_EMAIL_DELAY_MS,
+  hourlyLimit: config.MAX_EMAILS_PER_HOUR,
+  concurrency: config.WORKER_CONCURRENCY,
+});
+const emailIndexWorker = createEmailIndexWorker();
 
 const server = app.listen(config.API_PORT, config.API_HOST, () => {
   logger.info(`ReachInbox API server running`, {
@@ -16,6 +28,7 @@ const server = app.listen(config.API_PORT, config.API_HOST, () => {
     environment: config.NODE_ENV,
     url: `http://${config.API_HOST === '0.0.0.0' ? 'localhost' : config.API_HOST}:${config.API_PORT}`,
   });
+  logger.info('Email worker and index worker active in background');
 });
 
 async function gracefulShutdown(signal: string): Promise<void> {
@@ -29,6 +42,9 @@ async function gracefulShutdown(signal: string): Promise<void> {
 
     try {
       await Promise.allSettled([
+        emailWorker.close(),
+        emailIndexWorker.close(),
+        etherealTransport.close(),
         emailQueue.close(),
         emailIndexQueue.close(),
         closeElasticsearchClient(),

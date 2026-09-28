@@ -40,6 +40,27 @@ export function useAuth() {
     window.location.href = authApiService.getGoogleLoginUrl();
   };
 
+  const loginWithEmail = async (email: string, name?: string) => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const user = await authApiService.loginWithEmail(email, name);
+      setState({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+      return user;
+    } catch (err: any) {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: err.message || 'Failed to authenticate',
+      }));
+      throw err;
+    }
+  };
+
   const logout = async () => {
     setState((prev) => ({ ...prev, isLoading: true }));
     await authApiService.logout();
@@ -57,6 +78,7 @@ export function useAuth() {
     isLoading: state.isLoading,
     error: state.error,
     loginWithGoogle,
+    loginWithEmail,
     logout,
     refreshUser: loadUser,
   };

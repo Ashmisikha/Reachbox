@@ -132,6 +132,66 @@ export class AuthService {
       rawToken,
     };
   }
+
+  /**
+   * Authenticates or creates a user directly via email address.
+   * Finds the existing user or creates a new one, then establishes a persistent session.
+   */
+  public async loginOrCreateWithEmail(
+    email: string,
+    name?: string
+  ): Promise<AuthCallbackResult> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      const error = new Error('Invalid email address format');
+      (error as any).code = 'INVALID_EMAIL';
+      throw error;
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (user) {
+      if (user.status !== UserStatus.ACTIVE) {
+        const error = new Error('User account is disabled');
+        (error as any).code = 'USER_DISABLED';
+        throw error;
+      }
+      if (name && name.trim() && user.name !== name.trim()) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { name: name.trim() },
+        });
+      }
+    } else {
+      const emailPrefix = normalizedEmail.split('@')[0] || 'User';
+      const displayName = name?.trim() || emailPrefix;
+      user = await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          name: displayName,
+          status: UserStatus.ACTIVE,
+        },
+      });
+    }
+
+    const { rawToken, session } = await this.session.createSession(user.id);
+
+    logger.info('Successful authentication via email', {
+      userId: user.id,
+      email: user.email,
+    });
+
+    return {
+      user: user as AuthenticatedUser,
+      session,
+      rawToken,
+    };
+  }
 }
 
 export const authService = new AuthService();

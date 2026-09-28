@@ -26,6 +26,9 @@ import {
   CheckCircle2,
   ShieldCheck,
   BookUser,
+  FileText,
+  AlertTriangle,
+  ShieldAlert,
 } from 'lucide-react';
 
 interface NavSection {
@@ -45,6 +48,7 @@ const NAVIGATION_SECTIONS: NavSection[] = [
       { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, tourId: 'nav-dashboard' },
       { href: '/dashboard/campaigns', label: 'Campaigns', icon: Layers, tourId: 'nav-campaigns' },
       { href: '/dashboard/contacts', label: 'Contacts', icon: BookUser, tourId: 'nav-contacts' },
+      { href: '/dashboard/templates', label: 'Templates', icon: FileText, tourId: 'nav-templates' },
       { href: '/dashboard/scheduled', label: 'Scheduled', icon: Clock, tourId: 'nav-scheduled' },
       { href: '/dashboard/sent', label: 'Sent', icon: Send, tourId: 'nav-sent' },
       { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3, tourId: 'nav-analytics' },
@@ -54,6 +58,8 @@ const NAVIGATION_SECTIONS: NavSection[] = [
     title: 'OPERATIONS',
     items: [
       { href: '/dashboard/queues', label: 'Queues', icon: Cpu, tourId: 'nav-queues' },
+      { href: '/dashboard/failures', label: 'Failures & Retry', icon: AlertTriangle, tourId: 'nav-failures' },
+      { href: '/dashboard/suppressions', label: 'Suppressions', icon: ShieldAlert, tourId: 'nav-suppressions' },
       { href: '/dashboard/senders', label: 'Senders', icon: Users, tourId: 'nav-senders' },
       { href: '/dashboard/integrations', label: 'Integrations', icon: Plug, tourId: 'nav-integrations' },
     ],

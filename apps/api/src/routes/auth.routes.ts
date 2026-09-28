@@ -4,10 +4,14 @@ import {
   googleCallback,
   getMe,
   logout,
+  emailAuth,
 } from '../controllers/auth.controller';
 import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
+
+// POST /api/auth/email
+router.post('/email', emailAuth);
 
 // GET /api/auth/google
 router.get('/google', startGoogleAuth);

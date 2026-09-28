@@ -40,6 +40,29 @@ export const authApiService = {
   },
 
   /**
+   * Authenticates or creates an account using email.
+   */
+  async loginWithEmail(email: string, name?: string): Promise<AuthUser> {
+    const response = await fetch(`${API_BASE_URL}/api/auth/email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ email, name }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error?.message || 'Failed to sign in with email');
+    }
+
+    const data = await response.json();
+    return data.user as AuthUser;
+  },
+
+  /**
    * Invalidate the current session and clear authentication cookie.
    */
   async logout(): Promise<boolean> {

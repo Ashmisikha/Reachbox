@@ -77,6 +77,10 @@ export const contactService = {
     return apiFetch<ListContactsResponse>(`/api/contacts${qs ? `?${qs}` : ''}`);
   },
 
+  list(params?: ListContactsParams): Promise<ListContactsResponse> {
+    return contactService.getContacts(params);
+  },
+
   async getContact(id: string): Promise<{ success: boolean; data: Contact }> {
     return apiFetch<{ success: boolean; data: Contact }>(`/api/contacts/${id}`);
   },

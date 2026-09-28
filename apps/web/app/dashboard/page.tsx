@@ -3,15 +3,43 @@ import React from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
 import { useDashboardStats, useCampaigns } from '../../hooks/useCampaigns';
-import { StatCard, Card, StatusBadge, LoadingState, ErrorState, EmptyState } from '../../components/ui';
-import { Clock, Send, Layers, TrendingUp, Plus, ArrowRight, CheckCircle2 } from 'lucide-react';
+import {
+  MetricCard,
+  Card,
+  StatusBadge,
+  LoadingState,
+  ErrorState,
+  EmptyState,
+  PageHeader,
+  DateRangeControl,
+  ActivityChart,
+  DeliveryRing,
+} from '../../components/ui';
+import {
+  Clock,
+  Send,
+  Layers,
+  TrendingUp,
+  Plus,
+  ArrowRight,
+} from 'lucide-react';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { stats, isLoading: statsLoading, error: statsError, refresh: refreshStats } = useDashboardStats();
-  const { campaigns, isLoading: campaignsLoading, error: campaignsError, refresh: refreshCampaigns } = useCampaigns(1, 5);
+  const {
+    stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refresh: refreshStats,
+  } = useDashboardStats();
+  const {
+    campaigns,
+    isLoading: campaignsLoading,
+    error: campaignsError,
+    refresh: refreshCampaigns,
+  } = useCampaigns(1, 6);
 
-  const firstName = user?.name ? user.name.split(' ')[0] : 'there';
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Demo';
 
   if (statsLoading || campaignsLoading) {
     return <LoadingState message="Loading dashboard overview..." />;
@@ -35,173 +63,193 @@ export default function DashboardPage() {
   const totalCampaigns = stats?.campaignCount ?? 0;
 
   const totalDelivered = sent + failed;
-  const deliveryRate = totalDelivered > 0 ? ((sent / totalDelivered) * 100).toFixed(1) + '%' : '100%';
+  const deliveryRate =
+    totalDelivered > 0 ? ((sent / totalDelivered) * 100).toFixed(1) + '%' : '100%';
 
   return (
     <div className="space-y-6">
-      {/* ─── Welcome Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Good day, {firstName}!
-          </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Here&apos;s what&apos;s happening with your email campaigns today.
-          </p>
-        </div>
+      {/* ─── Header ──────────────────────────────────────────────────────── */}
+      <PageHeader
+        title={`Good morning, ${firstName}!`}
+        description="Track campaign performance, monitor queues, and manage your email infrastructure."
+        actions={
+          <div className="flex items-center gap-2.5">
+            <DateRangeControl label="Feb 22, 2026 - Mar 25, 2026" />
+            <Link
+              href="/dashboard/compose"
+              data-tour="action-new-campaign"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>New Campaign</span>
+            </Link>
+          </div>
+        }
+      />
 
-        <Link
-          href="/dashboard/compose"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all duration-150 active:scale-[0.98] self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>New Campaign</span>
-        </Link>
-      </div>
-
-      {/* ─── Metric KPI Cards ───────────────────────────────────────────── */}
+      {/* ─── 4 Compact Metric Cards ──────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Scheduled Emails"
+        <MetricCard
+          label="Scheduled"
           value={scheduled}
-          subtext="Queued in BullMQ engine"
+          subtext="Queued in BullMQ"
+          change="+12%"
+          changeType="positive"
           icon={<Clock className="w-4 h-4 text-blue-600" />}
         />
-        <StatCard
-          label="Sent Emails"
+        <MetricCard
+          label="Sent"
           value={sent}
           subtext="Delivered via SMTP"
+          change="+100%"
+          changeType="positive"
           icon={<Send className="w-4 h-4 text-emerald-600" />}
         />
-        <StatCard
-          label="Total Campaigns"
-          value={totalCampaigns}
-          subtext="Active & completed"
-          icon={<Layers className="w-4 h-4 text-indigo-600" />}
-        />
-        <StatCard
+        <MetricCard
           label="Delivery Rate"
           value={deliveryRate}
           subtext={failed > 0 ? `${failed} failed` : 'Zero errors detected'}
-          icon={<TrendingUp className="w-4 h-4 text-teal-600" />}
+          change="Optimal"
+          changeType="positive"
+          icon={<TrendingUp className="w-4 h-4 text-blue-600" />}
+        />
+        <MetricCard
+          label="Active Campaigns"
+          value={totalCampaigns}
+          subtext="Configured workspaces"
+          change={totalCampaigns > 0 ? 'Active' : 'Idle'}
+          changeType={totalCampaigns > 0 ? 'positive' : 'neutral'}
+          icon={<Layers className="w-4 h-4 text-slate-600" />}
         />
       </div>
 
-      {/* ─── Activity & Recent Campaigns ────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Email Activity Visualization (Left 2 cols) */}
-        <div className="lg:col-span-2">
-          <Card className="p-6 h-full flex flex-col justify-between">
+      {/* ─── Email Activity & Delivery Status ────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Email Activity (8 cols) */}
+        <Card className="lg:col-span-8 p-5">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-base font-semibold text-slate-900">Email Activity</h2>
-                  <p className="text-xs text-slate-500">Delivery throughput and queue execution overview</p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Workers Healthy
-                </span>
-              </div>
-
-              {/* Activity Volume Chart / Indicator */}
-              <div className="pt-4 pb-2">
-                <div className="grid grid-cols-7 gap-2 items-end h-40 pt-4 px-2 bg-slate-50/70 border border-slate-100 rounded-xl">
-                  {[
-                    { day: 'Mon', h: '35%', count: Math.round(sent * 0.12) },
-                    { day: 'Tue', h: '60%', count: Math.round(sent * 0.22) },
-                    { day: 'Wed', h: '45%', count: Math.round(sent * 0.15) },
-                    { day: 'Thu', h: '75%', count: Math.round(sent * 0.25) },
-                    { day: 'Fri', h: '50%', count: Math.round(sent * 0.18) },
-                    { day: 'Sat', h: '25%', count: Math.round(sent * 0.05) },
-                    { day: 'Sun', h: '20%', count: Math.round(sent * 0.03) },
-                  ].map((bar, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1.5 h-full justify-end group">
-                      <span className="text-[10px] text-slate-400 group-hover:text-blue-600 font-medium transition-colors">
-                        {bar.count}
-                      </span>
-                      <div
-                        style={{ height: bar.h }}
-                        className="w-full max-w-[28px] rounded-t-md bg-blue-500/80 group-hover:bg-blue-600 transition-colors"
-                      />
-                      <span className="text-[10px] text-slate-500 font-semibold uppercase">{bar.day}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <h2 className="text-sm font-semibold text-slate-900">Email Activity</h2>
+              <p className="text-[11px] text-slate-500">Scheduled vs sent throughput over time</p>
             </div>
+            <span className="text-[11px] font-medium text-slate-400 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
+              Last 7 days
+            </span>
+          </div>
 
-            {/* Quick Metrics Footer */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 mt-4 text-center">
-              <div>
-                <p className="text-xs text-slate-500">Scheduled Queue</p>
-                <p className="text-lg font-bold text-slate-800">{scheduled}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Sent Volume</p>
-                <p className="text-lg font-bold text-emerald-600">{sent}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500">Worker Status</p>
-                <p className="text-lg font-bold text-slate-800">Concurrency: 5</p>
-              </div>
-            </div>
-          </Card>
-        </div>
+          <ActivityChart scheduled={scheduled} sent={sent} />
+        </Card>
 
-        {/* Recent Campaigns (Right 1 col) */}
-        <div>
-          <Card className="p-6 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-slate-900">Recent Campaigns</h2>
-              <Link
-                href="/dashboard/campaigns"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                <span>View all</span>
-                <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
+        {/* Delivery Status Ring (4 cols) */}
+        <Card className="lg:col-span-4 p-5 flex flex-col justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Delivery Status</h2>
+            <p className="text-[11px] text-slate-500 mb-4">Live breakdown by outcome</p>
+          </div>
 
-            {campaigns.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-8">
-                <EmptyState
-                  title="No campaigns yet"
-                  description="Compose your first email campaign to begin scheduling."
-                  action={
-                    <Link
-                      href="/dashboard/compose"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-500"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      Create Campaign
-                    </Link>
-                  }
-                />
-              </div>
-            ) : (
-              <div className="space-y-3 flex-1 overflow-y-auto">
-                {campaigns.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/dashboard/campaigns/${c.id}`}
-                    className="block p-3 rounded-lg border border-slate-100 hover:border-slate-300 hover:bg-slate-50/70 transition-all duration-150"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <p className="text-xs font-semibold text-slate-800 truncate">{c.subject}</p>
-                      <StatusBadge status={c.status} />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{c.messageCount} recipients</span>
-                      <span>{new Date(c.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
+          <div className="my-auto py-2">
+            <DeliveryRing
+              delivered={sent}
+              scheduled={scheduled}
+              failed={failed}
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Overall Success</span>
+            <span className="font-semibold text-emerald-600">{deliveryRate}</span>
+          </div>
+        </Card>
       </div>
+
+      {/* ─── Recent Campaigns Table ──────────────────────────────────────── */}
+      <Card className="overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-semibold text-slate-900">Recent Campaigns</h3>
+            <p className="text-[11px] text-slate-500">Latest scheduled and processed email batches</p>
+          </div>
+          <Link
+            href="/dashboard/campaigns"
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition-colors"
+          >
+            <span>View all</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {campaigns.length === 0 ? (
+          <EmptyState
+            title="No campaigns found"
+            description="Get started by creating your first scheduled email campaign."
+            action={
+              <Link
+                href="/dashboard/compose"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create Campaign</span>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium">
+                  <th className="py-2.5 px-4">Campaign</th>
+                  <th className="py-2.5 px-4">Recipients</th>
+                  <th className="py-2.5 px-4">Delay</th>
+                  <th className="py-2.5 px-4">Hourly Limit</th>
+                  <th className="py-2.5 px-4">Status</th>
+                  <th className="py-2.5 px-4">Created</th>
+                  <th className="py-2.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {campaigns.map((c) => {
+                  const recipientCount =
+                    c.messageCount ?? (c as any)._count?.messages ?? 0;
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-slate-900">
+                        <Link
+                          href={`/dashboard/campaigns/${c.id}`}
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {c.subject}
+                        </Link>
+                        <p className="text-[11px] text-slate-400 font-normal">
+                          From: {c.sender.email}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 font-medium">
+                        {recipientCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500">{c.delayMs}ms</td>
+                      <td className="py-3 px-4 text-slate-500">{c.hourlyLimit}/hr</td>
+                      <td className="py-3 px-4">
+                        <StatusBadge status={c.status} />
+                      </td>
+                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <Link
+                          href={`/dashboard/campaigns/${c.id}`}
+                          className="inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-700"
+                        >
+                          Details &rarr;
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

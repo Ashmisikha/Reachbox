@@ -228,3 +228,74 @@ export async function logout(
     next(error);
   }
 }
+
+/**
+ * Authenticates or registers a user with an email address.
+ * Sets the persistent HttpOnly session cookie and returns user profile.
+ */
+export async function emailAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { email, name } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_EMAIL',
+          message: 'A valid email address is required.',
+        },
+      });
+      return;
+    }
+
+    const { user, rawToken } = await authService.loginOrCreateWithEmail(
+      email,
+      name
+    );
+
+    res.cookie(googleConfig.SESSION_COOKIE_NAME, rawToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: googleConfig.SESSION_MAX_AGE_MS,
+    });
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        status: user.status,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error: any) {
+    if (error.code === 'INVALID_EMAIL') {
+      res.status(400).json({
+        error: {
+          code: 'INVALID_EMAIL',
+          message: error.message || 'Invalid email address format.',
+        },
+      });
+      return;
+    }
+
+    if (error.code === 'USER_DISABLED') {
+      res.status(403).json({
+        error: {
+          code: 'USER_DISABLED',
+          message: 'This account has been disabled.',
+        },
+      });
+      return;
+    }
+
+    next(error);
+  }
+}

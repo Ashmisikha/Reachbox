@@ -709,4 +709,89 @@ describe('Phase 5 — Real Google OAuth & User Authentication', () => {
       vi.restoreAllMocks();
     });
   });
+
+  // ============================================================================
+  // X. Direct Email Authentication (POST /api/auth/email)
+  // ============================================================================
+  describe('X. Direct Email Authentication (POST /api/auth/email)', () => {
+    it('rejects missing or empty email with 400 INVALID_EMAIL', async () => {
+      const res = await request(app)
+        .post('/api/auth/email')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_EMAIL');
+    });
+
+    it('rejects invalid email format with 400 INVALID_EMAIL', async () => {
+      const res = await request(app)
+        .post('/api/auth/email')
+        .send({ email: 'not-an-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe('INVALID_EMAIL');
+    });
+
+    it('creates a new user and sets session cookie for valid new email', async () => {
+      const email = `newuser.${Date.now()}@example.com`;
+      const res = await request(app)
+        .post('/api/auth/email')
+        .send({ email, name: 'Alice Test' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.user.email).toBe(email);
+      expect(res.body.user.name).toBe('Alice Test');
+
+      const setCookie = res.headers['set-cookie'];
+      expect(setCookie).toBeDefined();
+      expect(setCookie[0]).toContain(googleConfig.SESSION_COOKIE_NAME);
+
+      // Verify the user can authenticate /api/auth/me with this cookie
+      const meRes = await request(app)
+        .get('/api/auth/me')
+        .set('Cookie', setCookie);
+
+      expect(meRes.status).toBe(200);
+      expect(meRes.body.user.email).toBe(email);
+    });
+
+    it('authenticates an existing user and returns their profile', async () => {
+      const email = `existing.${Date.now()}@example.com`;
+      const user = await prisma.user.create({
+        data: {
+          email,
+          name: 'Existing Member',
+          status: UserStatus.ACTIVE,
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/auth/email')
+        .send({ email });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.id).toBe(user.id);
+      expect(res.body.user.email).toBe(email);
+      expect(res.body.user.name).toBe('Existing Member');
+    });
+
+    it('rejects disabled user with 403 USER_DISABLED', async () => {
+      const email = `disabled.${Date.now()}@example.com`;
+      await prisma.user.create({
+        data: {
+          email,
+          name: 'Banned User',
+          status: UserStatus.DISABLED,
+        },
+      });
+
+      const res = await request(app)
+        .post('/api/auth/email')
+        .send({ email });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('USER_DISABLED');
+    });
+  });
 });

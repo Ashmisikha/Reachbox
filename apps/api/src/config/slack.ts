@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 export const slackConfigSchema = z.object({
   SLACK_CLIENT_ID: z.string().default('mock-slack-client-id'),

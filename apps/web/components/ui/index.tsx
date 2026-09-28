@@ -451,17 +451,15 @@ export function ActivityChart({
 
 // ─── DeliveryRing (Donut Visualization) ────────────────────────────────────────
 export function DeliveryRing({
-  delivered = 14,
-  opened = 10,
-  clicked = 4,
+  delivered = 0,
+  scheduled = 0,
   failed = 0,
 }: {
   delivered?: number;
-  opened?: number;
-  clicked?: number;
+  scheduled?: number;
   failed?: number;
 }) {
-  const total = Math.max(delivered + failed, 1);
+  const total = Math.max(delivered + scheduled + failed, 1);
   const deliveryPercent = Math.min(100, Math.round((delivered / total) * 100));
 
   // Circumference for r=38 is 2 * pi * 38 = 238.76
@@ -497,7 +495,7 @@ export function DeliveryRing({
         </svg>
         <div className="absolute flex flex-col items-center justify-center">
           <span className="text-xl font-bold text-slate-900">{deliveryPercent}%</span>
-          <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Rate</span>
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400">Delivered</span>
         </div>
       </div>
 
@@ -506,23 +504,16 @@ export function DeliveryRing({
         <div className="flex items-center justify-between text-slate-600">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-[11px]">Delivered</span>
+            <span className="text-[11px]">Sent (SMTP)</span>
           </div>
           <span className="font-semibold text-slate-900 text-[11px]">{delivered}</span>
         </div>
         <div className="flex items-center justify-between text-slate-600">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-[11px]">Opened</span>
+            <span className="text-[11px]">Scheduled</span>
           </div>
-          <span className="font-semibold text-slate-900 text-[11px]">{opened}</span>
-        </div>
-        <div className="flex items-center justify-between text-slate-600">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-500" />
-            <span className="text-[11px]">Clicked</span>
-          </div>
-          <span className="font-semibold text-slate-900 text-[11px]">{clicked}</span>
+          <span className="font-semibold text-slate-900 text-[11px]">{scheduled}</span>
         </div>
         <div className="flex items-center justify-between text-slate-600">
           <div className="flex items-center gap-1.5">

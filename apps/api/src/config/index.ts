@@ -12,7 +12,10 @@ const configSchema = z.object({
     z.coerce.number()
   ),
   API_HOST: z.string().default('0.0.0.0'),
-  CORS_ORIGIN: z.string().default('http://localhost:3000'),
+  CORS_ORIGIN: z.preprocess(
+    (val) => (typeof val === 'string' ? val.replace(/^["']|["']$/g, '').trim() : val),
+    z.string().default('http://localhost:3000')
+  ),
   DATABASE_URL: z
     .string()
     .default(

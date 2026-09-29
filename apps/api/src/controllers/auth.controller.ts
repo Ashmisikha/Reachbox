@@ -6,6 +6,7 @@ import { sessionService } from '../services/auth/session.service';
 import { logger } from '../lib/logger';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const cookieSameSite: 'lax' | 'none' = isProduction ? 'none' : 'lax';
 
 /**
  * Initiates the Google OAuth 2.0 flow.
@@ -24,7 +25,7 @@ export async function startGoogleAuth(
     res.cookie(googleConfig.OAUTH_STATE_COOKIE_NAME, state, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: googleConfig.OAUTH_STATE_MAX_AGE_MS,
     });
@@ -75,7 +76,7 @@ export async function googleCallback(
     res.clearCookie(googleConfig.OAUTH_STATE_COOKIE_NAME, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
     });
 
@@ -117,7 +118,7 @@ export async function googleCallback(
     res.cookie(googleConfig.SESSION_COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: googleConfig.SESSION_MAX_AGE_MS,
     });
@@ -212,7 +213,7 @@ export async function logout(
     res.clearCookie(googleConfig.SESSION_COOKIE_NAME, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
     });
 
@@ -259,7 +260,7 @@ export async function emailAuth(
     res.cookie(googleConfig.SESSION_COOKIE_NAME, rawToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: googleConfig.SESSION_MAX_AGE_MS,
     });

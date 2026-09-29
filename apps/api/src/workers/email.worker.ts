@@ -100,15 +100,24 @@ export async function processEmailJob(
     return;
   }
 
-  if (!message.job) {
-    throw new Error(`Email job record missing for message ${message.id}`);
+  let emailJob = message.job;
+  if (!emailJob) {
+    emailJob = await prisma.emailJob.upsert({
+      where: { emailMessageId: message.id },
+      create: {
+        emailMessageId: message.id,
+        bullmqJobId: String(job.id || `email-${message.id}`),
+        status: JobStatus.PENDING,
+      },
+      update: {},
+    });
   }
 
   if (!message.sender) {
     throw new Error(`Sender account ${message.senderId} not found for message ${message.id}`);
   }
 
-  if (message.job.status === JobStatus.COMPLETED) {
+  if (emailJob.status === JobStatus.COMPLETED) {
     return;
   }
 

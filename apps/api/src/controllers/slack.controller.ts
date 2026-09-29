@@ -6,6 +6,7 @@ import { slackConnectionService } from '../services/slack/slack-connection.servi
 import { logger } from '../lib/logger';
 
 const isProduction = process.env.NODE_ENV === 'production';
+const cookieSameSite: 'lax' | 'none' = isProduction ? 'none' : 'lax';
 
 /**
  * Initiates the Slack OAuth 2.0 flow for the authenticated user.
@@ -34,7 +35,7 @@ export async function connectSlack(
     res.cookie(slackConfig.SLACK_STATE_COOKIE_NAME, state, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
       maxAge: slackConfig.SLACK_STATE_MAX_AGE_MS,
     });
@@ -89,7 +90,7 @@ export async function slackCallback(
     res.clearCookie(slackConfig.SLACK_STATE_COOKIE_NAME, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: cookieSameSite,
       path: '/',
     });
 

@@ -5,11 +5,13 @@ import { closeDb } from './lib/db';
 import { closeRedis } from './lib/redis';
 import { emailQueue } from './queues/email.queue';
 import { emailIndexQueue } from './queues/email-index.queue';
+import { slackNotificationQueue } from './queues/slack-notification.queue';
 import { closeRedisConnection } from './queues/redis';
 import { SmtpTransportManager } from './services/smtp';
 import { closeElasticsearchClient } from './services/search';
 import { createEmailWorker } from './workers/email.worker';
 import { createEmailIndexWorker } from './workers/email-index.worker';
+import { slackNotificationWorker } from './workers/slack-notification.worker';
 import { EtherealEmailTransport } from './services/smtp/ethereal.transport';
 
 const etherealTransport = new EtherealEmailTransport();
@@ -28,7 +30,7 @@ const server = app.listen(config.API_PORT, config.API_HOST, () => {
     environment: config.NODE_ENV,
     url: `http://${config.API_HOST === '0.0.0.0' ? 'localhost' : config.API_HOST}:${config.API_PORT}`,
   });
-  logger.info('Email worker and index worker active in background');
+  logger.info('Email worker, index worker, and Slack notification worker active in background');
 });
 
 async function gracefulShutdown(signal: string): Promise<void> {
@@ -44,9 +46,11 @@ async function gracefulShutdown(signal: string): Promise<void> {
       await Promise.allSettled([
         emailWorker.close(),
         emailIndexWorker.close(),
+        slackNotificationWorker.close(),
         etherealTransport.close(),
         emailQueue.close(),
         emailIndexQueue.close(),
+        slackNotificationQueue.close(),
         closeElasticsearchClient(),
         SmtpTransportManager.closeAll(),
         closeDb(),

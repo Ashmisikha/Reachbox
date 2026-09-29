@@ -1,4 +1,4 @@
-import { EmailStatus } from '@prisma/client';
+import { EmailStatus, JobStatus } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { queueConfig } from '../config/queue';
 import { enqueueEmailBatch } from '../queues/email-enqueue.service';
@@ -47,6 +47,16 @@ export async function scheduleCampaign(campaignId: string): Promise<number> {
     if (messages.length === 0) {
       break;
     }
+
+    // Persist EmailJob tracking records in database for worker lifecycle management
+    await prisma.emailJob.createMany({
+      data: messages.map((message) => ({
+        emailMessageId: message.id,
+        bullmqJobId: `email-${message.id}`,
+        status: JobStatus.PENDING,
+      })),
+      skipDuplicates: true,
+    });
 
     // High-performance bulk insertion using BullMQ addBulk()
     await enqueueEmailBatch(

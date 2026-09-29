@@ -7,7 +7,10 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  API_PORT: z.coerce.number().default(4000),
+  API_PORT: z.preprocess(
+    (val) => (process.env.PORT ? process.env.PORT : (val ?? 4000)),
+    z.coerce.number()
+  ),
   API_HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   DATABASE_URL: z

@@ -49,3 +49,12 @@ Thumbs.db
 .turbo/
 tmp/
 *.rdb
+
+# Media & Demo Recording Artifacts
+*.mp4
+*.wav
+*.webp
+*.zip
+synced_demo_work/
+demo_frames/
+

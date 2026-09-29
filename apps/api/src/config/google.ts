@@ -8,7 +8,14 @@ dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const sanitizeEnv = (defaultVal: string) =>
   z.preprocess(
-    (val) => (typeof val === 'string' ? val.replace(/^["']|["']$/g, '').replace(/\r?\n/g, '').trim() : val),
+    (val) => {
+      if (typeof val !== 'string') return val;
+      return val
+        .replace(/^[A-Z0-9_]+\s*=\s*/i, '')
+        .replace(/^["']|["']$/g, '')
+        .replace(/\r?\n/g, '')
+        .trim();
+    },
     z.string().default(defaultVal)
   );
 

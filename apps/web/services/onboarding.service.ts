@@ -1,5 +1,6 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getApiBaseUrl } from '../lib/api-config';
+
+const getBase = () => getApiBaseUrl();
 
 export interface OnboardingStatus {
   setupCompleted: boolean;
@@ -17,7 +18,7 @@ export const onboardingApiService = {
    */
   async getStatus(): Promise<OnboardingStatus | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/onboarding/status`, {
+      const response = await fetch(`${getBase()}/api/onboarding/status`, {
         method: 'GET',
         headers: { Accept: 'application/json' },
         credentials: 'include',
@@ -42,7 +43,7 @@ export const onboardingApiService = {
     hourlyLimit?: number;
   }): Promise<OnboardingStatus | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/onboarding/setup`, {
+      const response = await fetch(`${getBase()}/api/onboarding/setup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ export const onboardingApiService = {
    */
   async saveTour(tourCompleted: boolean): Promise<OnboardingStatus | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/onboarding/tour`, {
+      const response = await fetch(`${getBase()}/api/onboarding/tour`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -88,7 +89,7 @@ export const onboardingApiService = {
    */
   async replayTour(): Promise<OnboardingStatus | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/onboarding/tour/replay`, {
+      const response = await fetch(`${getBase()}/api/onboarding/tour/replay`, {
         method: 'POST',
         headers: { Accept: 'application/json' },
         credentials: 'include',
@@ -107,7 +108,7 @@ export const onboardingApiService = {
    */
   async resetSetup(): Promise<OnboardingStatus | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/onboarding/setup/reset`, {
+      const response = await fetch(`${getBase()}/api/onboarding/setup/reset`, {
         method: 'POST',
         headers: { Accept: 'application/json' },
         credentials: 'include',

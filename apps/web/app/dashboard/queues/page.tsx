@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
+import { getApiBaseUrl } from '../../../lib/api-config';
 import { queueService, QueueMetricsResponse } from '../../../services/campaign.service';
 import {
   Card,
@@ -38,7 +39,7 @@ export default function QueuesDashboardPage() {
     loadMetrics();
   }, [loadMetrics]);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  const apiBase = getApiBaseUrl();
 
   return (
     <div className="space-y-6">

@@ -1,5 +1,6 @@
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getApiBaseUrl } from '../lib/api-config';
+
+const getBase = () => getApiBaseUrl();
 
 export interface SlackStatusResponse {
   connected: boolean;
@@ -15,7 +16,7 @@ export const slackApiService = {
    * Returns the direct URL to begin Slack OAuth 2.0 flow.
    */
   getConnectUrl(): string {
-    return `${API_BASE_URL}/api/slack/connect`;
+    return `${getBase()}/api/slack/connect`;
   },
 
   /**
@@ -23,7 +24,7 @@ export const slackApiService = {
    */
   async getStatus(): Promise<SlackStatusResponse | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/slack/status`, {
+      const response = await fetch(`${getBase()}/api/slack/status`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -46,7 +47,7 @@ export const slackApiService = {
    */
   async disconnect(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/slack/disconnect`, {
+      const response = await fetch(`${getBase()}/api/slack/disconnect`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',

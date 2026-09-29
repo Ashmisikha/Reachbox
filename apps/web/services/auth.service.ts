@@ -1,14 +1,12 @@
 import { AuthUser } from '../types/auth';
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+import { getApiBaseUrl } from '../lib/api-config';
 
 export const authApiService = {
   /**
    * Returns the direct URL to begin Google OAuth 2.0 authentication flow.
    */
   getGoogleLoginUrl(): string {
-    return `${API_BASE_URL}/api/auth/google`;
+    return `${getApiBaseUrl()}/api/auth/google`;
   },
 
   /**
@@ -16,7 +14,7 @@ export const authApiService = {
    */
   async getMe(): Promise<AuthUser | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/me`, {
         method: 'GET',
         headers: {
           Accept: 'application/json',
@@ -43,7 +41,7 @@ export const authApiService = {
    * Authenticates or creates an account using email.
    */
   async loginWithEmail(email: string, name?: string): Promise<AuthUser> {
-    const response = await fetch(`${API_BASE_URL}/api/auth/email`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/auth/email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,7 +65,7 @@ export const authApiService = {
    */
   async logout(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/auth/logout`, {
         method: 'POST',
         headers: {
           Accept: 'application/json',

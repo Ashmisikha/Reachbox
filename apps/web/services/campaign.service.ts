@@ -82,12 +82,12 @@ export interface CreateCampaignPayload {
   steps?: CreateCampaignStepInput[];
 }
 
+import { getApiBaseUrl } from '../lib/api-config';
+
 // ─── Service ───────────────────────────────────────────────────────────────────
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
@@ -156,26 +156,27 @@ export const campaignService = {
     const res = await apiFetch<any>(
       `/api/emails/search?q=${encodeURIComponent(query.trim())}&status=SENT&page=${page}&pageSize=${pageSize}`
     );
-    if (res.results) {
-      return {
-        emails: res.results.map((r: any) => ({
-          id: r.id,
-          recipient: r.recipient,
-          subject: r.subject,
-          status: r.status,
-          sentAt: r.sentAt,
-          campaign: { id: r.campaignId, subject: r.subject },
-          sender: { id: r.senderId, email: r.senderEmail, name: null },
-        })),
-        pagination: {
-          page: res.page || 1,
-          pageSize: res.pageSize || pageSize,
-          total: res.total || 0,
-          totalPages: res.totalPages || 1,
-        },
-      };
-    }
-    return res;
+    // API returns { items, page, pageSize, total, totalPages }
+    const rawItems: any[] = res.items ?? res.results ?? [];
+    return {
+      emails: rawItems.map((r: any) => ({
+        id: r.id,
+        recipient: r.recipient,
+        subject: r.subject,
+        status: r.status,
+        sentAt: r.sentAt,
+        messageId: r.messageId,
+        previewUrl: r.previewUrl,
+        campaign: { id: r.campaignId, subject: r.subject },
+        sender: { id: r.senderId, email: r.senderEmail, name: null },
+      })),
+      pagination: {
+        page: res.page || 1,
+        pageSize: res.pageSize || pageSize,
+        total: res.total || 0,
+        totalPages: res.totalPages || 1,
+      },
+    };
   },
 };
 
